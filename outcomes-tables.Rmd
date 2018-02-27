@@ -1,0 +1,110 @@
+---
+title: "ANIMO efficacy outcome Tables"
+author: "Kyle Humphrey"
+date: "`r format(Sys.time(), '%B %d %Y')`"
+output: html_document
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../results") })
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, echo = F, warning = F, message = F}
+source("setup-cleaning.R")
+```
+
+```{r table functions}
+source("table-functions.R")
+```
+
+```{r contrasts}
+source("contrasts.R")
+```
+
+```{r blood results}
+source("blood-models.R")
+```
+
+```{r cardiometabolic table}
+blood_results$means %>%
+  bind_cols(blood_results$diffs_base) %>%
+  mutate(vars = names(blood_labels) %>% rep(., each = 2)) %>%
+  full_join(blood_results$diffs_grps %>% mutate(vars = names(blood_labels)),
+            by = c("vars", "Group")) %>% select(-Group1, -Group, -vars) %>% as.matrix() %>%
+  `colnames<-`(c(
+    "Baseline",
+    "Week 12",
+    "Week 24",
+    "Week 12 - Baseline",
+    "Baseline",
+    "Week 12"
+  )) %>% 
+  htmlTable(
+    rnames = rep(c("WLC", "GSCWLI"), nrow(.)/2),
+    rgroup = blood_labels %>% flatten_chr() %>% rep(2),
+    n.rgroup = rep(2, nrow(.) / 2),
+    cgroup = c("Mean assessments", "Percent change from baseline", "Percent differences between groups"),
+    n.cgroup = c(3, 1, 2),
+    caption = "Table XX: Cardiometabolic measures."
+  )
+```
+
+```{r macro measures variables and labels}
+macro_labels <- tibble(
+  weight = "Weight (kg)",
+  `log(weight)` = "Percent weight change",
+  waist = "Waist circumference (cm)",
+  pct_fat = "Percent body fat",
+  `log(total_PA_minutes + 1)` = "LTPA (minutes/week)",
+  kcals_per_day = "Average caloric intake (kcal/day)"
+)
+```
+
+```{r macro models}
+source("macro-models.R")
+```
+
+```{r macro mean table}
+macro_results$means %>%
+  bind_cols(macro_results$diffs_base) %>%
+  mutate(vars = names(macro_labels) %>% rep(., each = 2)) %>%
+  full_join(macro_results$diffs_grps %>% mutate(vars = names(macro_labels)),
+            by = c("vars", "Group")) %>%
+  select(-Group1, -Group, -vars) %>% as.matrix() %>%
+  `colnames<-`(c(
+    "Baseline",
+    "Week 12",
+    "Week 24",
+    "Week 12 - Baseline",
+    "Baseline",
+    "Week 12"
+  )) %>% 
+  htmlTable(
+    rnames = rep(c("WLC", "GSCWLI"), nrow(.)/2),
+    rgroup = macro_labels %>% flatten_chr() %>% rep(2),
+    n.rgroup = rep(2, nrow(.) / 2),
+    cgroup = c("Mean assessments", "Change from baseline", "Differences between groups"),
+    n.cgroup = c(3, 1, 2),
+    caption = "Table XX: measures."
+  )
+```
+
+```{r macro difference from baseline table}
+macro_results$diffs_base %>% select(-Group) %>% as.matrix() %>%
+  htmlTable(
+    rnames = rep(c("WLC", "GSCWLI"), nrow(.)/2),
+    rgroup = macro_labels %>% flatten_chr() %>% rep(2),
+    n.rgroup = rep(2, nrow(.) / 2),
+    caption = "Table XX: Percent differences in mean efficacy measures from baseline for each group."
+  )
+```
+
+```{r macro differences between groups table}
+macro_results$diffs_grps %>% select(-Group) %>% as.matrix() %>%
+  htmlTable(
+    rnames = rep("", nrow(.)),
+    rgroup = macro_labels %>% flatten_chr() %>% rep(3),
+    n.rgroup = rep(1, nrow(.) / 1),
+    caption = "Table XX: Percent differences in mean cardiometabolic measures, GCSWLI group compared to WLC group."
+  )
+```
