@@ -178,3 +178,8 @@ animo <- animo %>%
 animo <- animo %>%
   mutate(group = factor(group, 0:1, c("WLC", "GCSWLI")),
          week = factor(week, c(0, 12, 24)))
+
+
+# save cleaned data -------------------------------------------------------
+
+save(animo, file = "../data/animo-cleaned.Rdata")
