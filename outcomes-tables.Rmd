@@ -29,11 +29,10 @@ source("blood-models.R")
 
 ```{r cardiometabolic table}
 blood_results$means %>%
-  bind_cols(blood_results$diffs_base) %>%
-  mutate(vars = names(blood_labels) %>% rep(., each = 2)) %>%
-  full_join(blood_results$diffs_grps %>% mutate(vars = names(blood_labels)),
-            by = c("vars", "Group")) %>% select(-Group1, -Group, -vars) %>% as.matrix() %>%
-  
+  full_join(blood_results$diffs_base, by = c("variable", "Group")) %>%
+  full_join(blood_results$diffs_grps, by = c("variable", "Group")) %>%
+  select(-variable, -Group) %>%
+  as.matrix() %>%
   `colnames<-`(c(
     "Baseline",
     "Week 12",
@@ -46,7 +45,8 @@ blood_results$means %>%
     rnames = rep(c("WLC", "GSCWLI"), nrow(.)/2),
     rgroup = blood_labels %>% flatten_chr() %>% rep(2),
     n.rgroup = rep(2, nrow(.) / 2),
-    cgroup = c("Mean assessments", "Percent change from baseline", "Percent differences between groups"),
+    cgroup = c("Mean assessments", "Percent change from baseline",
+               "Percent differences between groups"),
     n.cgroup = c(3, 1, 2),
     caption = "Table XX: Cardiometabolic measures.",
     tfoot = "<sup>a</sup> Difference in change from baseline between groups at week 12"
@@ -70,11 +70,15 @@ source("macro-models.R")
 
 ```{r macro mean table}
 macro_results$means %>%
-  bind_cols(macro_results$diffs_base) %>%
-  mutate(vars = names(macro_labels) %>% rep(., each = 2)) %>%
-  full_join(macro_results$diffs_grps %>% mutate(vars = names(macro_labels)),
-            by = c("vars", "Group")) %>%
-  select(-Group1, -Group, -vars) %>% as.matrix() %>%
+  # remove means of percent weight beacuse they're geo means 
+  # not means of percent weight change
+  mutate(Baseline = ifelse(variable == "log(weight)", NA, Baseline),
+         `Week 12` = ifelse(variable == "log(weight)", NA, `Week 12`),
+         `Week 24` = ifelse(variable == "log(weight)", NA, `Week 24`),) %>% 
+  full_join(macro_results$diffs_base, by = c("variable", "Group")) %>%
+  full_join(macro_results$diffs_grps, by = c("variable", "Group")) %>%
+  select(-variable, -Group) %>%
+  as.matrix() %>%
   `colnames<-`(c(
     "Baseline",
     "Week 12",
@@ -87,7 +91,8 @@ macro_results$means %>%
     rnames = rep(c("WLC", "GSCWLI"), nrow(.)/2),
     rgroup = macro_labels %>% flatten_chr() %>% rep(2),
     n.rgroup = rep(2, nrow(.) / 2),
-    cgroup = c("Mean assessments", "Change from baseline", "Differences between groups"),
+    cgroup = c("Mean assessments", "Change from baseline",
+               "Differences between groups"),
     n.cgroup = c(3, 1, 2),
     caption = "Table XX: measures.",
     tfoot = "<sup>a</sup> Lesiure time physical activity. Means given are geometric means, differences are percent differences.\n<sup>b</sup>Difference in change from baseline between groups at week 12"

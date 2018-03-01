@@ -65,6 +65,8 @@ get_results_df <- function(glht_obj, variable_name, difference = T,
   results_df <- results_df %>%
     separate(lhs, into = c("week", "Group"), sep = "_") %>%
     spread(key = week, value = estimate) %>%
+    mutate(variable = variable_name) %>%
+    select(variable, everything()) %>%
     arrange(desc(Group))
 
   return(results_df)
