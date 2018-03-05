@@ -17,324 +17,24 @@ p_load(Hmisc, readxl, lme4, multcomp, tidyverse, broom, Gmisc)
 select <- dplyr::select
 ```
 
-```{r, eval = F}
-# load data ---------------------------------------------------------------
-
-var_names <- read_csv('../data/animo.csv', col_names = F, n_max = 1) %>%
-  flatten_chr()
-animo <- read.csv('../data/animo-labels.csv', header = F, skip = 1, stringsAsFactors = F) %>%
-  set_names(var_names)
-dxa <- read_excel('../data/Nosotros DXA Data Final KH.xlsx')
-blood <- read.csv('../data/animo-blood.csv', stringsAsFactors = F)
-food_base <- read.csv('../data/Animo_baselinesum2009r_sw.csv', stringsAsFactors = F)
-food_week_12 <- read.csv('../data/Animo_12wksum2009r_sw.csv', stringsAsFactors = F)
-food_week_24 <- read.csv('../data/Animo_24wsum2009r_sw.csv', stringsAsFactors = F)
-
-
-# clean amino data --------------------------------------------------------
-
-animo <- animo %>%
-  group_by(participant_id) %>%
-  mutate(group = group[1], # puts group assignment label in every observation
-         age = age_esf[1]) %>% # puts age on every observation
-  rowwise() %>%
-  # change event names to weeks, and first event to week 0 (baseline)
-  mutate(
-    week = ifelse(
-      redcap_event_name == 'Baseline',
-      0,
-      parse_number(redcap_event_name)
-    ) %>% as.character()
-  ) %>%
-  select(-redcap_event_name)
-
-# derive measurements (average of three taken at each assessment)
-animo <- animo %>%
-  rowwise() %>%
-  mutate(weight_3_paf = as.numeric(weight_3_paf),
-         weight_3_paf_mini = as.numeric(weight_3_paf_mini),
-         weight = mean(c(weight_1_paf,
-                         weight_2_paf,
-                         weight_3_paf,
-                         weight_1_paf_mini,
-                         weight_2_paf_mini,
-                         weight_3_paf_mini), na.rm = T),
-         waist = mean(c(waist_1_paf, waist_2_paf, waist_3_paf), na.rm = T)
-  ) %>% ungroup()
-
-# subset to occasions and variables of interest
-animo <- animo %>% filter(week %in% c(0, 12, 24), !is.na(group)) %>%
-  select(participant_id, week, group, weight, waist, ends_with('gpaq'))
-
-
-# clean physical activity data --------------------------------------------
-
-animo <- animo %>%
-  mutate_at(vars(starts_with("time")), funs(parse_number)) %>%
-  mutate(
-    vigorous_PA_minutes = days_vig_rec_gpaq *
-      (time_vig_rec_h_gpaq * 60 + time_vig_rec_min_gpaq),
-    vigorous_PA_minutes = ifelse(vig_rec_gpaq == "No",
-                                 0,
-                                 vigorous_PA_minutes),
-    moderate_PA_minutes = days_mod_rec_gpaq *
-      (time_mod_rec_h_gpaq * 60 + time_mod_rec_min_gpaq),
-    moderate_PA_minutes = ifelse(mod_rec_gpaq == "No",
-                                 0,
-                                 vigorous_PA_minutes),
-    total_PA_minutes = vigorous_PA_minutes + moderate_PA_minutes
-  ) %>% select(-ends_with('gpaq'))
-
-
-# clean food data ---------------------------------------------------------
-
-food <- map2_df(
-  list(food_base, food_week_12, food_week_24),
-  c("0", "12", "24"),
-  ~ .x %>% select(sid, kcals_per_day = ener) %>%
-    mutate(sid = parse_number(sid),
-           participant_id = ifelse(sid < 10,
-                                   paste0("HMS3-00", sid),
-                                   paste0("HMS3-0", sid)),
-           week = .y) # %>% select(participant_id, week, kcals_per_day, -sid)
-) %>% select(-sid)
-
-
-# clean blood data --------------------------------------------------------
-
-blood_labels <- tibble(
-  hba1c = "Glycated.Hemoglobin",
-  alt = "ALT",
-  ast = "AST",
-  cholesterol = "Cholesterol",
-  hdl = "HDL.Cholesterol",
-  ldl = "LDL.Cholesterol",
-  triglycerides = "Triglycerides",
-  hscrp = "hs.CRP"
-)
-
-variable_labels_blood  <- c(
-  map_chr(blood_labels, ~ .x),
-  map_chr(blood_labels, ~  paste0(.x, '.1')),
-  map_chr(blood_labels, ~  paste0(.x, '.2'))
-)
-
-variable_names_blood <- c(
-  names(blood_labels),
-  paste0(names(blood_labels), '.1'),
-  paste0(names(blood_labels), '.2')
-)
-
-# select variables of interest, set variable names
-blood <- blood %>% select(Record.ID, one_of(variable_labels_blood)) %>%
-  set_names(c('participant_id', variable_names_blood))
-
-# fix wrong id
-blood <- blood %>%
-  mutate(participant_id = ifelse(participant_id == 'HMS-023',
-                                 'HMS3-023',
-                                 participant_id))
-
-# select variables of interest, set variable names
-blood <- blood %>%
-  gather(key, value, -participant_id) %>%
-  separate(key, c('var', 'week'), convert = T) %>%
-  spread(key = var, value = value, convert = T)
-
-# change weeks to be correct
-blood <- blood %>%
-  mutate(week = ifelse(is.na(week), 0, week),
-         week = as.character(week * 12))
-
-# reset lables to be pretty for output
-blood_labels <- tibble(
-  hba1c = "HbA1c",
-  alt = "ALT",
-  ast = "AST",
-  cholesterol = "Total Cholesterol",
-  hdl = "HDL Cholesterol",
-  ldl = "LDL Cholesterol",
-  triglycerides = "Triglycerides",
-  hscrp = "hs-CRP"
-)
-
-
-# clean dxa data ----------------------------------------------------------
-
-dxa <- dxa %>%
-  rename(participant_id = patient_id,
-         week = `time point`,
-         pct_fat = TB_tissue_pfat) %>%
-  mutate(week = as.character((week - 1) * 12))
-
-
-# join all data -----------------------------------------------------------
-
-animo <- full_join(animo, dxa, by = c("participant_id", "week")) %>%
-  full_join(blood, by = c("participant_id", "week")) %>%
-  full_join(food, by = c("participant_id", "week"))
-
-
-# remove participants who weren’t randomized ------------------------------
-
-animo <- animo %>%
-  group_by(participant_id) %>%
-  mutate(group = group[1]) %>%
-  ungroup() %>%
-  filter(!is.na(group))
-
-
-# relabel groups ----------------------------------------------------------
-
-animo <- animo %>%
-  mutate(group = factor(group, 0:1, c("WLC", "GCSWLI")),
-         week = factor(week, c(0, 12, 24)))
-
-
-# save cleaned data -------------------------------------------------------
-
-save(animo, file = "../data/animo-cleaned.Rdata")
+```{r, eval = F} 
+# change eval to T if you want to clean raw data
+source('clean-data.R')
 ```
 
 ```{r load cleaned data}
-load("../data/animo-cleaned.Rdata")
+load('../data/animo-cleaned.Rdata')
 ```
 
 ```{r table functions}
-get_glhts <- function(linfct, models_list, labels_df) {
-  map(
-    names(labels_df),
-    ~ glht(models_list[[.x]], linfct)
-  ) %>% set_names(names(labels_df))
-}
-
-missing_obs_df <- function(variable_name) {
-  variable_name <- str_replace(variable_name, "log\\(", "") %>%
-    str_replace("\\)", "") %>% str_replace("\\ \\+ 1", "")
-  animo %>% group_by(group, week) %>%
-    select(group, week, variable_name) %>%
-    summarise_all(funs(missing = is.na(.) %>% sum(),
-                       pct = (missing / length(.)) * 100)) %>%
-    mutate(missing = paste0(missing,
-                            " (", sprintf("%1.f",pct), ")")) %>%
-    filter(!(group == "WLC" & week == 24)) %>%
-    select(group, week, missing) %>%
-    ungroup() %>%
-    mutate_all(as.character) %>%
-    mutate(group = paste0(group, "_missing")) %>%
-    spread(key = week, value = missing)
-}
-
-get_results_df <- function(glht_obj, variable_name, difference = T,
-                           sigfigs = 3, digits = NULL,
-                           log_transformed = str_detect(variable_name, 'log')) {
-  # returns a formatted data frame with 95% confidence intervals and p-values
-  #   resulting from the contrasts given in a multcomp::glht object
-  # inputs: glht_obj, a multcomp::glht object with contrasts of interest
-  #         variable name, the variable name of interest
-
-  ci_df <- confint(glht_obj, calpha = qnorm(.975)) %>%
-    broom::tidy() %>% select(-rhs)
-
-  if (log_transformed) {
-    if (difference) {
-      ci_df <- ci_df %>% mutate_at(vars(-lhs), funs((exp(.) - 1) * 100))
-    } else if (str_detect(variable_name, '\\+ 1')) {
-      ci_df <- ci_df %>% mutate_at(vars(-lhs), funs((exp(.) - 1)))
-    } else {
-      ci_df <- ci_df %>% mutate_at(vars(-lhs), funs(exp))
-    }
-  }
-
-  if (difference) {
-    pval_df <-
-      summary(object = glht_obj, test = adjusted(type = "none")) %>%
-      broom::tidy() %>%
-      select(lhs, p.value)
-
-    results_df <- full_join(ci_df, pval_df, by = 'lhs')
-  } else {
-    results_df <- ci_df
-  }
-
-  if (difference & log_transformed) {
-    results_df <- results_df %>%
-      mutate_at(vars(estimate, conf.low, conf.high),
-                funs(sprintf("%.1f", .)))
-  } else {
-    results_df <- results_df %>%
-      rowwise() %>%
-      mutate_at(vars(estimate, conf.low, conf.high),
-                funs(format(., digits = sigfigs, scientific = F, trim = T)))
-  }
-
-  results_df <- results_df %>%
-    mutate(estimate = paste0(estimate,
-                             " (", conf.low, ", ", conf.high, ")")) %>%
-    select(-starts_with('conf'))
-
-  if (difference) {
-    results_df <- results_df %>%
-      mutate(p.value = ifelse(p.value < 0.01,
-                              "p < 0.01",
-                              sprintf("p = %#.2g", p.value)),
-             estimate = paste0(estimate, ", ", p.value)) %>%
-      select(-p.value)
-  }
-
-  results_df <- results_df %>%
-    separate(lhs, into = c("week", "group"), sep = "_") %>%
-    spread(key = week, value = estimate)
-  if (!difference) {
-    results_df <- results_df %>%
-      bind_rows(missing_obs_df(variable_name))
-  }
-  results_df <- results_df %>%
-    mutate(variable = variable_name) %>%
-    select(variable, everything()) %>%
-    ungroup() %>%
-    arrange(group)
-
-  return(results_df)
-}
-
-get_results <- function(glht_list, difference = T, labels_df) {
-  map2_df(glht_list, names(labels_df),
-          ~ get_results_df(.x, .y, difference))
-}
-
-
+source('table-functions.R')
 ```
 
 ```{r contrasts}
-linfct_means <- rbind(
-  '0_WLC' = c(1, 0, 0, 0, 0, 0),
-  '12_WLC' = c(1, 0, 1, 0, 0, 0),
-  # '24_WLC' = c(1, 0, 0, 1, 0, 0),
-  '0_GCSWLI' = c(1, 1, 0, 0, 0, 0),
-  '12_GCSWLI' = c(1, 1, 1, 0, 1, 0),
-  '24_GCSWLI' = c(1, 1, 0, 1, 0, 1)
-)
-
-linfct_diffs_base <- rbind(
-  '12 - 0_WLC' = c(0, 0, 1, 0, 0, 0),
-  # '24 - 0_WLC' = c(0, 0, 0, 1, 0, 0),
-  '12 - 0_GCSWLI' = c(0, 0, 1, 0, 1, 0) #,
-  # '24 - 0_GCSWLI' = c(0, 0, 0, 1, 0, 1)
-)
-
-linfct_diffs_grps <- rbind(
-  # GCSWLI - WLC
-  # "GCSWLI" after underscore in name to print on the GCSWLI line in the table
-  '0_GCSWLI' = c(0, 1, 0, 0, 0, 0),
-  '12_GCSWLI' = c(0, 0, 0, 0, 1, 0) #,
-  # '24_GCSWLI - WLC' = c(0, 1, 0, 0, 0, 1)
-)
+source('contrasts.R')
 ```
 
-```{r blood results}
-# variable names and labels for table -------------------------------------
-
+```{r blood measures variables and labels}
 blood_labels <- tibble(
   hba1c = "HbA1c",
   alt = "ALT",
@@ -345,14 +45,14 @@ blood_labels <- tibble(
   triglycerides = "Triglycerides",
   hscrp = "hs-CRP"
 )
-
 
 # log transform variables -------------------------------------------------
 
 blood_labels <- blood_labels %>%
   rename_all(funs(paste0("log(", ., ")")))
+```
 
-
+```{r blood models}
 # run models --------------------------------------------------------------
 
 blood_models <- map(
@@ -376,7 +76,6 @@ blood_glhts <- map(
 blood_results <- map2(blood_glhts, c(F, T, T),
                       ~ get_results(.x, .y, blood_labels)) %>%
   set_names('means', 'diffs_base', 'diffs_grps')
-
 ```
 
 ```{r cardiometabolic table}
@@ -440,8 +139,6 @@ macro_glhts <- map(
 macro_results <- map2(macro_glhts, c(F, T, T),
                       ~ get_results(.x, .y, macro_labels)) %>%
   set_names('means', 'diffs_base', 'diffs_grps')
-
-
 ```
 
 ```{r macro mean table}
