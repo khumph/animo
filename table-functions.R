@@ -1,25 +1,13 @@
+# load cleaned data
+# need for determining the number of (non-missing) observations for each week/group
+# load here b/c won't be able to lexical scope it when knitting .Rmd otherwise
+load('../data/animo-cleaned.Rdata')
+
 get_glhts <- function(linfct, models_list, labels_df) {
   map(
     names(labels_df),
     ~ glht(models_list[[.x]], linfct)
   ) %>% set_names(names(labels_df))
-}
-
-missing_obs_df <- function(variable_name) {
-  variable_name <- str_replace(variable_name, "log\\(", "") %>%
-    str_replace("\\)", "") %>% str_replace("\\ \\+ 1", "")
-  animo %>% group_by(group, week) %>%
-    select(group, week, variable_name) %>%
-    summarise_all(funs(missing = is.na(.) %>% sum(),
-                       pct = (missing / length(.)) * 100)) %>%
-    mutate(missing = paste0(missing,
-                            " (", sprintf("%1.f",pct), ")")) %>%
-    filter(!(group == "WLC" & week == 24)) %>%
-    select(group, week, missing) %>%
-    ungroup() %>%
-    mutate_all(as.character) %>%
-    mutate(group = paste0(group, "_missing")) %>%
-    spread(key = week, value = missing)
 }
 
 get_results_df <- function(glht_obj, variable_name, difference = T,
@@ -81,12 +69,7 @@ get_results_df <- function(glht_obj, variable_name, difference = T,
 
   results_df <- results_df %>%
     separate(lhs, into = c("week", "group"), sep = "_") %>%
-    spread(key = week, value = estimate)
-  if (!difference) {
-    results_df <- results_df %>%
-      bind_rows(missing_obs_df(variable_name))
-  }
-  results_df <- results_df %>%
+    spread(key = week, value = estimate) %>%
     mutate(variable = variable_name) %>%
     select(variable, everything()) %>%
     ungroup() %>%
@@ -98,4 +81,30 @@ get_results_df <- function(glht_obj, variable_name, difference = T,
 get_results <- function(glht_list, difference = T, labels_df) {
   map2_df(glht_list, names(labels_df),
           ~ get_results_df(.x, .y, difference))
+}
+
+present_obs_one_var_df <- function(variable_name) {
+  var_name_trans <- variable_name
+  variable_name <- str_replace(variable_name, "log\\(", "") %>%
+    str_replace("\\)", "") %>% str_replace("\\ \\+ 1", "")
+  animo %>% group_by(group, week) %>%
+    select(group, week, variable_name) %>%
+    summarise_all(funs(present = is.na(.) %>% `!` %>% sum())) %>%
+    mutate(variable = var_name_trans) %>%
+    select(variable, everything())
+}
+
+present_obs_all_df <- function(labels_df) {
+  map_df(names(labels_df), ~ present_obs_one_var_df(.x)) %>%
+    group_by(group, week) %>%
+    summarise(present = median(present) %>% floor(),
+              pct = present * 4) %>%
+    mutate(present = paste0(present,
+                            " (", sprintf("%1.f",pct), ")")) %>%
+    filter(!(group == "WLC" & week == 24)) %>%
+    select(group, week, present) %>%
+    ungroup() %>%
+    mutate_all(as.character) %>%
+    mutate(group = paste0(group, "_present")) %>%
+    spread(key = week, value = present)
 }
