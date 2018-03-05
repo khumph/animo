@@ -97,8 +97,8 @@ blood_results$means %>%
     rnames = rep(c("GCSWLI", "WLC"), nrow(.) / 2),
     rgroup = c(blood_labels %>% flatten_chr(), "Number of observations<sup>b</sup> (% of observations at baseline)") %>% rep(2),
     n.rgroup = rep(2, nrow(.) / 2),
-    cgroup = c("Mean assessments", "Percent change from baseline",
-               "Percent differences between groups"),
+    cgroup = c("Mean assessments (SD)", "Percent change from baseline (95% CI)",
+               "Percent differences between groups (95% CI)"),
     n.cgroup = c(3, 1, 2),
     caption = "Table XX: Cardiometabolic measures.",
     tfoot = "<sup>a</sup> Difference in change from baseline between groups at week 12\n<sup>b</sup> Actually the rounded down median number of observations, but all were within one observation of the median"
@@ -170,6 +170,6 @@ macro_results$means %>%
                "Differences between groups"),
     n.cgroup = c(3, 1, 2),
     caption = "Table XX: measures.",
-    tfoot = "<sup>a</sup> Lesiure time physical activity. Means given are geometric means, differences are percent differences.\n<sup>b</sup>Difference in change from baseline between groups at week 12\n<sup>c</sup> Actually the rounded down median number of observations, but all were within one observation of the median"
+    tfoot = "<sup>a</sup> Lesiure time physical activity. Differences are percent differences.\n<sup>b</sup>Difference in change from baseline between groups at week 12\n<sup>c</sup> Actually the rounded down median number of observations, but all were within one observation of the median"
   )
 ```
