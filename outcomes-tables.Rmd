@@ -97,8 +97,8 @@ blood_results$means %>%
     rnames = rep(c("GCSWLI", "WLC"), nrow(.) / 2),
     rgroup = c(blood_labels %>% flatten_chr(), "Number of observations<sup>b</sup> (% of observations at baseline)") %>% rep(2),
     n.rgroup = rep(2, nrow(.) / 2),
-    cgroup = c("Mean assessments (SD)", "Percent change from baseline (95% CI)",
-               "Percent differences between groups (95% CI)"),
+    cgroup = c("Median assessments (MAD)", "Percent mean difference from baseline (95% CI)",
+               "Percent mean differences between groups (95% CI)"),
     n.cgroup = c(3, 1, 2),
     caption = "Table XX: Cardiometabolic measures.",
     tfoot = "<sup>a</sup> Difference in change from baseline between groups at week 12\n<sup>b</sup> Actually the rounded down median number of observations, but all were within one observation of the median"
@@ -111,7 +111,7 @@ macro_labels <- tibble(
   `log(weight)` = "Percent weight change",
   waist = "Waist circumference (cm)",
   pct_fat = "Percent body fat",
-  `log(total_PA_minutes + 1)` = "LTPA<sup>a</sup> (minutes/week)",
+  total_PA_minutes = "LTPA<sup>a</sup> (minutes/week)",
   kcals_per_day = "Average caloric intake (kcal/day)"
 )
 ```
@@ -166,8 +166,8 @@ macro_results$means %>%
     rnames = rep(c("GCSWLI", "WLC"), nrow(.) / 2),
     rgroup = c(macro_labels %>% flatten_chr(), "Number of observations<sup>c</sup> (% of observations at baseline)") %>% rep(2),
     n.rgroup = rep(2, nrow(.) / 2),
-    cgroup = c("Mean assessments", "Change from baseline",
-               "Differences between groups"),
+    cgroup = c("Median assessments (MAD)", "Mean change from baseline",
+               "Mean differences between groups"),
     n.cgroup = c(3, 1, 2),
     caption = "Table XX: measures.",
     tfoot = "<sup>a</sup> Lesiure time physical activity. Differences are percent differences.\n<sup>b</sup>Difference in change from baseline between groups at week 12\n<sup>c</sup> Actually the rounded down median number of observations, but all were within one observation of the median"

@@ -12,7 +12,8 @@ get_glhts <- function(linfct, models_list, labels_df) {
 
 get_results_df <- function(glht_obj, variable_name, difference = T,
                            sigfigs = 3, digits = NULL,
-                           log_transformed = str_detect(variable_name, 'log')) {
+                           log_transformed = str_detect(variable_name, 'log'),
+                           mean_sd = T) {
   # returns a formatted data frame with 95% confidence intervals and p-values
   #   resulting from the contrasts given in a multcomp::glht object
   # inputs: glht_obj, a multcomp::glht object with contrasts of interest
@@ -21,9 +22,8 @@ get_results_df <- function(glht_obj, variable_name, difference = T,
   if (difference) {
     ci_df <- confint(glht_obj, calpha = qnorm(.975)) %>%
       broom::tidy() %>% select(-rhs)
-    if (log_transformed & str_detect(variable_name, '\\+ 1')) {
-      ci_df <- ci_df %>% mutate_at(vars(-lhs), funs((exp(.) - 1)))
-    } else if (log_transformed) {
+
+    if (log_transformed) {
       ci_df <- ci_df %>% mutate_at(vars(-lhs), funs((exp(.) - 1) * 100))
     }
 
@@ -63,13 +63,21 @@ get_results_df <- function(glht_obj, variable_name, difference = T,
                                    str_replace(variable_name, "log\\(", "") %>%
                                      str_replace("\\)", "") %>%
                                      str_replace("\\ \\+ 1", "")) %>%
-      group_by(group, week) %>%
-      summarise_all(funs(avg = mean(., na.rm = T), SD = sd(., na.rm = T))) %>%
+      group_by(group, week)
+    if (mean_sd) {
+      results_df <- results_df %>%
+        summarise_all(funs(center = mean(., na.rm = T), spread = sd(., na.rm = T)))
+    } else {
+      results_df <- results_df %>%
+        summarise_all(funs(center = median(., na.rm = T),
+                           spread = mad(., na.rm = T, constant = 1)))
+    }
+    results_df <- results_df %>%
       rowwise() %>%
-      mutate_at(vars(avg, SD),
+      mutate_at(vars(center, spread),
                 funs(format(., digits = sigfigs, scientific = F, trim = T))) %>%
-      mutate(estimate = paste0(avg, " (", SD, ")")) %>%
-      select(-avg, -SD) %>%
+      mutate(estimate = paste0(center, " (", spread, ")")) %>%
+      select(-center, -spread) %>%
       mutate_all(as.character) %>%
       filter(!(group == "WLC" & week == 24))
   }
@@ -85,7 +93,7 @@ get_results_df <- function(glht_obj, variable_name, difference = T,
 
 get_results <- function(glht_list, difference = T, labels_df) {
   map2_df(glht_list, names(labels_df),
-          ~ get_results_df(.x, .y, difference))
+          ~ get_results_df(.x, .y, difference, mean_sd = F))
 }
 
 present_obs_one_var_df <- function(variable_name) {
