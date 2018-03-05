@@ -80,6 +80,7 @@ blood_results <- map2(blood_glhts, c(F, T, T),
 
 ```{r cardiometabolic table}
 blood_results$means %>%
+  bind_rows(present_obs_all_df(blood_labels) %>% select(-group)) %>%
   full_join(blood_results$diffs_base, by = c("variable", "group")) %>%
   full_join(blood_results$diffs_grps, by = c("variable", "group")) %>%
   select(-variable, -group) %>%
@@ -91,16 +92,16 @@ blood_results$means %>%
     "Week 12 - Baseline",
     "Baseline",
     "Week 12<sup>a</sup>"
-  )) %>% 
+  )) %>%
   htmlTable(
-    rnames = rep(c("GCSWLI", "Missing (%)", "WLC", "Missing (%)"), nrow(.)/4),
-    rgroup = blood_labels %>% flatten_chr() %>% rep(4),
-    n.rgroup = rep(4, nrow(.) / 4),
+    rnames = rep(c("GCSWLI", "WLC"), nrow(.) / 2),
+    rgroup = c(blood_labels %>% flatten_chr(), "Number of observations<sup>b</sup> (% of observations at baseline)") %>% rep(2),
+    n.rgroup = rep(2, nrow(.) / 2),
     cgroup = c("Mean assessments", "Percent change from baseline",
                "Percent differences between groups"),
     n.cgroup = c(3, 1, 2),
     caption = "Table XX: Cardiometabolic measures.",
-    tfoot = "<sup>a</sup> Difference in change from baseline between groups at week 12"
+    tfoot = "<sup>a</sup> Difference in change from baseline between groups at week 12\n<sup>b</sup> Actually the rounded down median number of observations, but all were within one observation of the median"
   )
 ```
 
@@ -143,11 +144,12 @@ macro_results <- map2(macro_glhts, c(F, T, T),
 
 ```{r macro mean table}
 macro_results$means %>%
-  # remove means of percent weight beacuse they're geo means 
+  bind_rows(present_obs_all_df(macro_labels) %>% rename(variable = group)) %>%
+  # remove means of percent weight beacuse they're geo means
   # not means of percent weight change
   mutate(`0` = ifelse(variable == "log(weight)", NA, `0`),
          `12` = ifelse(variable == "log(weight)", NA, `12`),
-         `24` = ifelse(variable == "log(weight)", NA, `24`),) %>% 
+         `24` = ifelse(variable == "log(weight)", NA, `24`)) %>%
   full_join(macro_results$diffs_base, by = c("variable", "group")) %>%
   full_join(macro_results$diffs_grps, by = c("variable", "group")) %>%
   select(-variable, -group) %>%
@@ -159,15 +161,15 @@ macro_results$means %>%
     "Week 12 - Baseline",
     "Baseline",
     "Week 12<sup>b</sup>"
-  )) %>% 
+  )) %>%
   htmlTable(
-    rnames = rep(c("GCSWLI", "Missing (%)", "WLC", "Missing (%)"), nrow(.)/4),
-    rgroup = macro_labels %>% flatten_chr() %>% rep(4),
-    n.rgroup = rep(4, nrow(.) / 4),
+    rnames = rep(c("GCSWLI", "WLC"), nrow(.) / 2),
+    rgroup = c(macro_labels %>% flatten_chr(), "Number of observations<sup>c</sup> (% of observations at baseline)") %>% rep(2),
+    n.rgroup = rep(2, nrow(.) / 2),
     cgroup = c("Mean assessments", "Change from baseline",
                "Differences between groups"),
     n.cgroup = c(3, 1, 2),
     caption = "Table XX: measures.",
-    tfoot = "<sup>a</sup> Lesiure time physical activity. Means given are geometric means, differences are percent differences.\n<sup>b</sup>Difference in change from baseline between groups at week 12"
+    tfoot = "<sup>a</sup> Lesiure time physical activity. Means given are geometric means, differences are percent differences.\n<sup>b</sup>Difference in change from baseline between groups at week 12\n<sup>c</sup> Actually the rounded down median number of observations, but all were within one observation of the median"
   )
 ```
