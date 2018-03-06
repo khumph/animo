@@ -70,7 +70,7 @@ get_results_df <- function(glht_obj, variable_name, difference = T,
     } else {
       results_df <- results_df %>%
         summarise_all(funs(center = median(., na.rm = T),
-                           spread = mad(., na.rm = T, constant = 1)))
+                           spread = IQR(., na.rm = T)))
     }
     results_df <- results_df %>%
       rowwise() %>%
