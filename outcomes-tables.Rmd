@@ -57,7 +57,8 @@ blood_results <- run_all(blood_labels, animo)
 ```
 
 ```{r cardiometabolic table}
-make_table(blood_results, blood_labels, caption = "Table XX: Cardiometabolic measures.")
+make_table(blood_results, blood_labels, df = animo, 
+           caption = "Table XX: Cardiometabolic measures.")
 ```
 
 ```{r macro measures variables and labels}
@@ -76,6 +77,7 @@ macro_results <- run_all(macro_labels, animo)
 ```
 
 ```{r macro mean table}
-make_table(macro_results, macro_labels, caption = "Table XX: measures.",
+make_table(macro_results, macro_labels, df = animo, 
+           caption = "Table XX: measures.",
            tfoot = "\n<sup>c</sup>Lesiure time physical activity.")
 ```
