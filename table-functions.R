@@ -121,3 +121,64 @@ present_obs_all_df <- function(labels_df) {
     mutate(group = paste0(group, "_present")) %>%
     spread(key = week, value = present)
 }
+
+run_models <- function(labels_df, df) {
+  model_list <- map(
+    names(labels_df),
+    ~ lmer(
+      as.formula(paste(.x, '~', 'group * week + (1 | participant_id)')),
+      data = df %>% filter(!is.na(.x)))
+  ) %>% set_names(names(labels_df))
+}
+
+run_contrasts <- function(model_list, labels_df) {
+  map(
+    list(linfct_means, linfct_diffs_base, linfct_diffs_grps),
+    ~ get_glhts(.x, model_list, labels_df)
+  ) %>% set_names('means', 'diffs_base', 'diffs_grps')
+}
+
+run_results <- function(glht_list, labels_df) {
+  map2(glht_list, c(F, T, T),
+                        ~ get_results(.x, .y, labels_df)) %>%
+    set_names('means', 'diffs_base', 'diffs_grps')
+}
+
+run_all <- function(labels_df, df) {
+  model_list <- run_models(labels_df, df)
+  glht_list <- run_contrasts(model_list, labels_df)
+  run_results(glht_list, labels_df)
+}
+
+make_table <- function(results_list, labels_df, tfoot = "", ...) {
+  results_list$means %>%
+    bind_rows(present_obs_all_df(labels_df) %>% rename(variable = group)) %>%
+    # remove means of percent weight beacuse they're geo means
+    # not means of percent weight change
+    mutate(`0` = ifelse(variable == "log(weight)", NA, `0`),
+           `12` = ifelse(variable == "log(weight)", NA, `12`),
+           `24` = ifelse(variable == "log(weight)", NA, `24`)) %>%
+    full_join(results_list$diffs_base, by = c("variable", "group")) %>%
+    full_join(results_list$diffs_grps, by = c("variable", "group")) %>%
+    select(-variable, -group) %>%
+    as.matrix() %>%
+    `colnames<-`(c(
+      "Baseline",
+      "Week 12",
+      "Week 24",
+      "Week 12 - Baseline",
+      "Baseline",
+      "Week 12<sup>a</sup>"
+    )) %>%
+    htmlTable(
+      rnames = rep(c("GCSWLI", "WLC"), nrow(.) / 2),
+      rgroup = c(labels_df %>% flatten_chr(),
+                 "Number of observations<sup>b</sup> (% of observations at baseline)") %>% rep(2),
+      n.rgroup = rep(2, nrow(.) / 2),
+      cgroup = c("Median assessments (IQR)", "Mean change from baseline",
+                 "Mean differences between groups"),
+      n.cgroup = c(3, 1, 2),
+      tfoot = paste0("<sup>a</sup> Difference in change from baseline between groups at week 12\n<sup>b</sup> Actually the rounded down median number of observations, but all were within one observation of the median", tfoot),
+      ...
+    )
+}
