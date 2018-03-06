@@ -53,56 +53,11 @@ blood_labels <- blood_labels %>%
 ```
 
 ```{r blood models}
-# run models --------------------------------------------------------------
-
-blood_models <- map(
-  names(blood_labels),
-  ~ lmer(
-    as.formula(paste(.x, '~', 'group * week + (1 | participant_id)')),
-    data = animo)
-) %>% set_names(names(blood_labels))
-
-
-# obtain contrasts of interest --------------------------------------------
-
-blood_glhts <- map(
-  list(linfct_means, linfct_diffs_base, linfct_diffs_grps),
-  ~ get_glhts(.x, blood_models, blood_labels)
-) %>% set_names('means', 'diffs_base', 'diffs_grps')
-
-
-# get confidence intervals, and p-values in table form --------------------
-
-blood_results <- map2(blood_glhts, c(F, T, T),
-                      ~ get_results(.x, .y, blood_labels)) %>%
-  set_names('means', 'diffs_base', 'diffs_grps')
+blood_results <- run_all(blood_labels, animo)
 ```
 
 ```{r cardiometabolic table}
-blood_results$means %>%
-  bind_rows(present_obs_all_df(blood_labels) %>% select(-group)) %>%
-  full_join(blood_results$diffs_base, by = c("variable", "group")) %>%
-  full_join(blood_results$diffs_grps, by = c("variable", "group")) %>%
-  select(-variable, -group) %>%
-  as.matrix() %>%
-  `colnames<-`(c(
-    "Baseline",
-    "Week 12",
-    "Week 24",
-    "Week 12 - Baseline",
-    "Baseline",
-    "Week 12<sup>a</sup>"
-  )) %>%
-  htmlTable(
-    rnames = rep(c("GCSWLI", "WLC"), nrow(.) / 2),
-    rgroup = c(blood_labels %>% flatten_chr(), "Number of observations<sup>b</sup> (% of observations at baseline)") %>% rep(2),
-    n.rgroup = rep(2, nrow(.) / 2),
-    cgroup = c("Mean assessments", "Percent change from baseline",
-               "Percent differences between groups"),
-    n.cgroup = c(3, 1, 2),
-    caption = "Table XX: Cardiometabolic measures.",
-    tfoot = "<sup>a</sup> Difference in change from baseline between groups at week 12\n<sup>b</sup> Actually the rounded down median number of observations, but all were within one observation of the median"
-  )
+make_table(blood_results, blood_labels, caption = "Table XX: Cardiometabolic measures.")
 ```
 
 ```{r macro measures variables and labels}
@@ -111,65 +66,16 @@ macro_labels <- tibble(
   `log(weight)` = "Percent weight change",
   waist = "Waist circumference (cm)",
   pct_fat = "Percent body fat",
-  `log(total_PA_minutes + 1)` = "LTPA<sup>a</sup> (minutes/week)",
+  total_PA_minutes = "LTPA<sup>a</sup> (minutes/week)",
   kcals_per_day = "Average caloric intake (kcal/day)"
 )
 ```
 
 ```{r macro models}
-# models ------------------------------------------------------------------
-
-macro_models <- map(
-  names(macro_labels),
-  ~ lmer(
-    as.formula(paste(.x, '~', 'group * week + (1 | participant_id)')),
-    data = animo %>% filter(!is.na(.x)))
-) %>% set_names(names(macro_labels))
-
-
-# contrasts ---------------------------------------------------------------
-
-macro_glhts <- map(
-  list(linfct_means, linfct_diffs_base, linfct_diffs_grps),
-  ~ get_glhts(.x, macro_models, macro_labels)
-) %>% set_names('means', 'diffs_base', 'diffs_grps')
-
-
-# results -----------------------------------------------------------------
-
-macro_results <- map2(macro_glhts, c(F, T, T),
-                      ~ get_results(.x, .y, macro_labels)) %>%
-  set_names('means', 'diffs_base', 'diffs_grps')
+macro_results <- run_all(macro_labels, animo)
 ```
 
 ```{r macro mean table}
-macro_results$means %>%
-  bind_rows(present_obs_all_df(macro_labels) %>% rename(variable = group)) %>%
-  # remove means of percent weight beacuse they're geo means
-  # not means of percent weight change
-  mutate(`0` = ifelse(variable == "log(weight)", NA, `0`),
-         `12` = ifelse(variable == "log(weight)", NA, `12`),
-         `24` = ifelse(variable == "log(weight)", NA, `24`)) %>%
-  full_join(macro_results$diffs_base, by = c("variable", "group")) %>%
-  full_join(macro_results$diffs_grps, by = c("variable", "group")) %>%
-  select(-variable, -group) %>%
-  as.matrix() %>%
-  `colnames<-`(c(
-    "Baseline",
-    "Week 12",
-    "Week 24",
-    "Week 12 - Baseline",
-    "Baseline",
-    "Week 12<sup>b</sup>"
-  )) %>%
-  htmlTable(
-    rnames = rep(c("GCSWLI", "WLC"), nrow(.) / 2),
-    rgroup = c(macro_labels %>% flatten_chr(), "Number of observations<sup>c</sup> (% of observations at baseline)") %>% rep(2),
-    n.rgroup = rep(2, nrow(.) / 2),
-    cgroup = c("Mean assessments", "Change from baseline",
-               "Differences between groups"),
-    n.cgroup = c(3, 1, 2),
-    caption = "Table XX: measures.",
-    tfoot = "<sup>a</sup> Lesiure time physical activity. Means given are geometric means, differences are percent differences.\n<sup>b</sup>Difference in change from baseline between groups at week 12\n<sup>c</sup> Actually the rounded down median number of observations, but all were within one observation of the median"
-  )
+make_table(macro_results, macro_labels, caption = "Table XX: measures.",
+           tfoot = "\n<sup>c</sup>Lesiure time physical activity.")
 ```
