@@ -173,6 +173,6 @@ animo <- animo %>%
 
 # save cleaned data -------------------------------------------------------
 
-save(animo, file = "../data/animo-efficacy-cleaned.Rdata")
+save(animo, file = "../data/animo-efficacy-clean.Rdata")
 
-write_csv(animo, "animo.csv")
+write_csv(animo, "../data/animo-efficacy-clean.csv")
