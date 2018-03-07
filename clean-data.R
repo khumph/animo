@@ -62,8 +62,8 @@ animo <- animo %>%
     moderate_PA_minutes = ifelse(mod_rec_gpaq == "No",
                                  0,
                                  vigorous_PA_minutes),
-    total_PA_minutes = vigorous_PA_minutes + moderate_PA_minutes
-  ) %>% select(-ends_with('gpaq'))
+    ltpa = vigorous_PA_minutes + moderate_PA_minutes
+  ) %>% select(-ends_with('gpaq'), -moderate_PA_minutes, -vigorous_PA_minutes)
 
 
 # clean food data ---------------------------------------------------------
@@ -173,4 +173,6 @@ animo <- animo %>%
 
 # save cleaned data -------------------------------------------------------
 
-save(animo, file = "../data/animo-cleaned.Rdata")
+save(animo, file = "../data/animo-efficacy-cleaned.Rdata")
+
+write_csv(animo, "animo.csv")
