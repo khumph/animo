@@ -1,0 +1,133 @@
+---
+title: "ANIMO efficacy outcomes exploratory data analysis"
+author: "Kyle Humphrey"
+date: "`r format(Sys.time(), '%B %d %Y')`"
+output: html_document
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../results") })
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, echo = F, warning = F, message = F}
+rm(list = ls())
+knitr::opts_chunk$set(warning = F, echo = F, message = F)
+library(pacman)
+p_load(tidyverse, plotly, GGally)
+select <- dplyr::select
+```
+
+```{r load cleaned data}
+load('../data/animo-efficacy-cleaned.Rdata')
+animo <- animo %>% mutate(participant_id = str_replace(participant_id, "HMS3-\\d", ""))
+```
+
+```{r}
+variable_names_blood <- c("hba1c", "alt", "ast", "cholesterol", "hdl", "ldl", "triglycerides", "hscrp")
+
+variable_names_macro <- c("weight", "waist", "pct_fat", "ltpa", "kcals_per_day")
+```
+
+```{r dimensions for saving plot}
+x_dim <- 1280
+y_dim <- 720
+```
+
+```{r blood variables}
+png("../results/pairs-blood.png", height = y_dim, width = x_dim)
+blood_pairs <- animo %>%
+  select(week, group, one_of(variable_names_blood), -participant_id) %>%
+  ggpairs()
+print(blood_pairs)
+dev.off()
+blood_pairs
+```
+
+```{r blood variables log transformed}
+png("../results/pairs-blood-log10.png", height = y_dim, width = x_dim)
+blood_pairs_log <- animo %>%
+  select(week, group, one_of(variable_names_blood), -participant_id) %>%
+  mutate_at(vars(-week, -group), funs(log10)) %>%
+  ggpairs()
+print(blood_pairs_log)
+dev.off()
+blood_pairs_log
+```
+
+```{r macro variables}
+png("../results/pairs-macro.png", height = y_dim, width = x_dim)
+macro_pairs <- animo %>%
+  select(week, group, one_of(variable_names_macro), -participant_id) %>%
+  ggpairs()
+print(macro_pairs)
+dev.off()
+macro_pairs
+```
+
+```{r macro variables transformed}
+png("../results/pairs-macro-log10.png", height = y_dim, width = x_dim)
+macro_pairs_log <- animo %>%
+  select(week, group, one_of(variable_names_macro), -participant_id) %>%
+  mutate(ltpa = log10(ltpa + 1),
+         kcals_per_day = log10(kcals_per_day)) %>%
+  ggpairs()
+print(macro_pairs_log)
+dev.off()
+macro_pairs_log
+```
+
+```{r, eval = F}
+lowest <- map(variable_names_blood, ~ animo %>% arrange_(.x))
+highest <- map(variable_names_blood, ~ animo %>% arrange(desc(.x)))
+animo %>% arrange(desc(weight))
+```
+
+# Missing values
+
+```{r missing values}
+animo %>% group_by(week, group) %>%
+  summarise_at(vars(-participant_id), funs(sum(is.na(.)))) %>%
+  arrange(group)
+```
+
+```{r}
+ggplot(animo, aes(x = week, y = weight, group = participant_id)) + 
+  geom_boxplot(aes(group = week), alpha = 0.1) +
+  geom_point(alpha = 0.6) +
+  geom_line(alpha = 0.6) +
+  facet_wrap(~ group) +
+  theme(legend.position = "none")
+```
+
+```{r}
+dropped_out_ids <- animo %>% filter(is.na(weight)) %>%
+  select(participant_id) %>%
+  distinct() %>% flatten_chr()
+  
+dropped_out_12_ids <- animo %>% filter(is.na(weight), week == 12) %>%
+  select(participant_id) %>%
+  distinct() %>% flatten_chr()
+```
+
+```{r}
+animo %>% select(participant_id, group, week, weight) %>%
+  filter(participant_id %in% dropped_out_12_ids, week == "0") %>%
+  ggplot(aes(x = week, y = weight, group = participant_id,
+             color = participant_id)) + 
+  geom_boxplot(data = animo %>% filter(week == "0"),
+               aes(group = week), alpha = 0.1) +
+  geom_point() +
+  geom_label(aes(label = participant_id), position = position_dodge(0.5)) +
+  geom_line() +
+  facet_wrap(~ group) +
+  theme(legend.position = "none") + 
+  labs(title = "Baseline boxplots",
+       caption = "Labels and points are weights of participants who have no post-baseline weights")
+```
+
+```{r participants who dropped out after baseline}
+animo %>%
+  filter(participant_id %in% dropped_out_12_ids, week == "0") %>% arrange(group)
+```
+
+
