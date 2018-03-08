@@ -50,7 +50,7 @@ get_results_df_diff <- function(glht_obj, log_transformed) {
     results_df <- results_df %>%
       rowwise() %>%
       mutate_at(vars(estimate, conf.low, conf.high),
-                funs(format(., digits = 3, scientific = F, trim = T)))
+                funs(format(., digits = 2, scientific = F, trim = T)))
   }
 
   results_df %>%
@@ -64,22 +64,24 @@ get_results_df_diff <- function(glht_obj, log_transformed) {
     separate(lhs, into = c("week", "group"), sep = "_")
 }
 
-get_results_df_mean <- function(df, variable_name) {
-  variable_name <- str_replace(variable_name, "log\\(", "") %>%
+get_results_df_mean <- function(glht_obj, df, variable_name, log_transformed) {
+  variable_name_core <- str_replace(variable_name, "log\\(", "") %>%
     str_replace("\\)", "") %>%
     str_replace("\\ \\+ 1", "")
 
-  df %>% select(group, week, variable_name) %>%
+  estimates_df <- tidy(glht_obj) %>% rowwise() %>%
+    mutate(estimate = ifelse(log_transformed, exp(estimate), estimate)) %>%
+    separate(lhs, into = c("week", "group"), sep = "_")
+
+  sds_df <- df %>% select(group, week, variable_name_core) %>%
     group_by(group, week) %>%
-    summarise_all(funs(center = median(., na.rm = T),
-                       spread = IQR(., na.rm = T))) %>%
-    rowwise() %>%
-    mutate_at(vars(center, spread),
+    summarise_all(funs(spread = sd(., na.rm = T)))
+
+  left_join(estimates_df, sds_df, by = c("week", "group")) %>% rowwise() %>%
+    mutate_at(vars(estimate, spread),
               funs(format(., digits = 3, scientific = F, trim = T))) %>%
-    mutate(estimate = paste0(center, " (", spread, ")")) %>%
-    select(-center, -spread) %>%
-    mutate_all(as.character) %>%
-    filter(!(group == "WLC" & week == 24))
+    mutate(estimate = paste0(estimate, " (", spread, ")")) %>%
+    select(week, group, estimate) %>% ungroup()
 }
 
 get_results_df <- function(glht_obj, variable_name, difference = T, df,
@@ -92,7 +94,7 @@ get_results_df <- function(glht_obj, variable_name, difference = T, df,
   if (difference) {
     results_df <- get_results_df_diff(glht_obj, log_transformed)
   } else {
-    results_df <- get_results_df_mean(df, variable_name)
+    results_df <- get_results_df_mean(glht_obj, df, variable_name, log_transformed)
   }
 
   results_df %>%
@@ -185,10 +187,10 @@ make_table <- function(results_list, labels_df, tfoot = "", df, ...) {
       rgroup = c(labels_df %>% flatten_chr(),
                  "Number of observations<sup>b</sup> (% of observations at baseline)") %>% rep(2),
       n.rgroup = rep(2, nrow(.) / 2),
-      cgroup = c("Median assessments (IQR)", "Mean change from baseline",
-                 "Mean differences between groups"),
+      cgroup = c("Mean (SD)", "Mean change from baseline (95% CI), p-value",
+                 "Mean differences between groups (95% CI), p-value"),
       n.cgroup = c(3, 1, 2),
-      tfoot = paste0("<sup>a</sup> Difference in change from baseline between groups at week 12\n<sup>b</sup> Actually the rounded down median number of observations, but all were within one observation of the median", tfoot),
+      tfoot = paste0("<sup>a</sup>Difference in change from baseline between groups at week 12\n<sup>b</sup>The number of observations available for some outcomes were one below or above the values given", tfoot),
       ...
     )
 }
