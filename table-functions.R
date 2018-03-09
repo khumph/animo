@@ -147,7 +147,7 @@ present_obs_one_var_df <- function(variable_name, df) {
 present_obs_all_df <- function(labels_df, df) {
   map_df(names(labels_df), ~ present_obs_one_var_df(.x, df)) %>%
     group_by(group, week) %>%
-    summarise(present = median(present) %>% floor(),
+    summarise(present = median(present) %>% round(),
               pct = present * 4) %>%
     mutate(present = paste0(present,
                             " (", sprintf("%1.f",pct), ")")) %>%
@@ -162,7 +162,7 @@ present_obs_all_df <- function(labels_df, df) {
 
 # creating and formating table ----------------------------------------------
 
-make_table <- function(results_list, labels_df, tfoot = "", df, ...) {
+make_table <- function(results_list, labels_df, df, ...) {
   results_list$means %>%
     bind_rows(present_obs_all_df(labels_df, df) %>% rename(variable = group)) %>%
     # remove means of percent weight beacuse they're geo means
@@ -180,17 +180,14 @@ make_table <- function(results_list, labels_df, tfoot = "", df, ...) {
       "Week 24",
       "Week 12 - Baseline",
       "Baseline",
-      "Week 12<sup>a</sup>"
+      "Week 12<sup>b</sup>"
     )) %>%
     htmlTable(
       rnames = rep(c("GCSWLI", "WLC"), nrow(.) / 2),
       rgroup = c(labels_df %>% flatten_chr(),
-                 "Number of observations<sup>b</sup> (% of observations at baseline)") %>% rep(2),
+                 "Number of observations<sup>c</sup> (% of observations at baseline)") %>% rep(2),
       n.rgroup = rep(2, nrow(.) / 2),
-      cgroup = c("Mean (SD)", "Mean change from baseline (95% CI), p-value",
-                 "Mean differences between groups (95% CI), p-value"),
       n.cgroup = c(3, 1, 2),
-      tfoot = paste0("<sup>a</sup>Difference in change from baseline between groups at week 12\n<sup>b</sup>The number of observations available for some outcomes were one below or above the values given", tfoot),
       ...
     )
 }
