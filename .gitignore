@@ -1,4 +1,4 @@
 .*
 !.gitignore
 testing.R
-results/
+extra/
