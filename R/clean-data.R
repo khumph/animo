@@ -1,14 +1,14 @@
 # load data ---------------------------------------------------------------
 
-var_names <- read_csv('../data/animo.csv', col_names = F, n_max = 1) %>%
+var_names <- read_csv('../raw-data/animo.csv', col_names = F, n_max = 1) %>%
   flatten_chr()
-animo <- read.csv('../data/animo-labels.csv', header = F, skip = 1, stringsAsFactors = F) %>%
+animo <- read.csv('../raw-data/animo-labels.csv', header = F, skip = 1, stringsAsFactors = F) %>%
   set_names(var_names)
-dxa <- read_excel('../data/Nosotros DXA Data Final KH.xlsx')
-blood <- read.csv('../data/animo-blood.csv', stringsAsFactors = F)
-food_base <- read.csv('../data/Animo_baselinesum2009r_sw.csv', stringsAsFactors = F)
-food_week_12 <- read.csv('../data/Animo_12wksum2009r_sw.csv', stringsAsFactors = F)
-food_week_24 <- read.csv('../data/Animo_24wsum2009r_sw.csv', stringsAsFactors = F)
+dxa <- read_excel('../raw-data/Nosotros DXA Data Final KH.xlsx')
+blood <- read.csv('../raw-data/animo-blood.csv', stringsAsFactors = F)
+food_base <- read.csv('../raw-data/Animo_baselinesum2009r_sw.csv', stringsAsFactors = F)
+food_week_12 <- read.csv('../raw-data/Animo_12wksum2009r_sw.csv', stringsAsFactors = F)
+food_week_24 <- read.csv('../raw-data/Animo_24wsum2009r_sw.csv', stringsAsFactors = F)
 
 
 # clean amino data --------------------------------------------------------

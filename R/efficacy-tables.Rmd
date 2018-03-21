@@ -23,7 +23,7 @@ source('clean-data.R')
 ```
 
 ```{r load cleaned data}
-load('../data/animo-efficacy-cleaned.Rdata')
+load('../processed-data/animo-efficacy-cleaned.Rdata')
 ```
 
 ```{r table functions}
