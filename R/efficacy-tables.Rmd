@@ -1,0 +1,113 @@
+---
+title: "ANIMO efficacy outcome tables"
+author: "Kyle Humphrey"
+date: "`r format(Sys.time(), '%B %d %Y')`"
+output: html_document
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../results") })
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, echo = F, warning = F, message = F}
+rm(list = ls())
+knitr::opts_chunk$set(warning = F, echo = F, message = F)
+library(pacman)
+p_load(Hmisc, readxl, lme4, multcomp, tidyverse, broom, Gmisc)
+select <- dplyr::select
+```
+
+```{r, eval = F} 
+# change eval to T if you want to clean raw data
+source('clean-data.R')
+```
+
+```{r load cleaned data}
+load('../processed-data/animo-efficacy-cleaned.Rdata')
+```
+
+```{r table functions}
+source('table-functions.R')
+```
+
+```{r contrasts}
+source('contrasts.R')
+```
+
+```{r macro measures variables and labels}
+macro_labels <- tibble(
+  weight = "Weight, kg",
+  `log(weight)` = "Percent weight change",
+  waist = "Waist circumference, cm",
+  pct_fat = "Percent body fat",
+  ltpa = "LTPA<sup>d</sup>, minutes/week",
+  `log(kcals_per_day)` = "Average caloric intake<sup>e</sup>, kcal/day"
+)
+```
+
+```{r macro models}
+macro_results <- run_all(macro_labels, animo)
+```
+
+```{r macro mean table}
+make_table(
+  macro_results,
+  macro_labels,
+  df = animo,
+  cgroup = c(
+    "Mean<sup>a</sup> (SD)",
+    "Mean change from baseline (95% CI), p-value",
+    "Mean differences between groups (95% CI), p-value"
+  ),
+  caption = "Table XX: Estimates and 95% confidence intervals for mean weight, body composition, physical activity, and daily caloric intake, as well as changes in these mean measures from baseline, and mean differences between groups.",
+  tfoot = paste0(
+    "<sup>a</sup>Means were estimated by contrasts in each model\n",
+    "<sup>b</sup>Difference in change from baseline between groups at week 12\n",
+    "<sup>c</sup>The number of observations available for some outcomes were one below or above the values given\n",
+    "<sup>d</sup>Lesiure time physical activity.\n",
+    "<sup>e</sup>Differences in caloric intake are percent differences, and (for the last column) percent difference in ratio of mean week 12 to mean baseline measurements"
+  )
+)
+```
+
+
+```{r blood measures variables and labels}
+blood_labels <- tibble(
+  hba1c = "HbA1c",
+  alt = "ALT",
+  ast = "AST",
+  cholesterol = "Cholesterol",
+  hdl = "HDL Cholesterol",
+  ldl = "LDL Cholesterol",
+  triglycerides = "Triglycerides",
+  hscrp = "hs-CRP"
+)
+
+# log transform variables -------------------------------------------------
+
+blood_labels <- blood_labels %>%
+  rename_all(funs(paste0("log(", ., ")")))
+```
+
+```{r blood models}
+blood_results <- run_all(blood_labels, animo)
+```
+
+```{r cardiometabolic table}
+make_table(
+  blood_results,
+  blood_labels,
+  df = animo,
+  cgroup = c(
+    "Mean<sup>a</sup> (SD)",
+    "Percent change from baseline (95% CI), p-value",
+    "Percent differences between groups (95% CI), p-value"
+  ),
+  caption = "Table XX: Estimates and 95% confidence intervals for mean cardiometabolic measures, changes in mean measures from baseline, and mean differences between groups. Units for means and SDs are mg/dL, with the exception of HbA1c, which has units of DCCT %.",
+  tfoot = paste0(
+    "<sup>a</sup>Geometric means, estimated by contrasts in each model\n",
+    "<sup>b</sup>Percent difference in the ratio of mean week 12 to mean baseline measurements\n<sup>c</sup>The number of observations available for some outcomes were one below or above the values given"
+  )
+)
+```
+

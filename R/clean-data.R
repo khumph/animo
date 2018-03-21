@@ -1,14 +1,14 @@
 # load data ---------------------------------------------------------------
 
-var_names <- read_csv('../data/animo.csv', col_names = F, n_max = 1) %>%
+var_names <- read_csv('../raw-data/animo.csv', col_names = F, n_max = 1) %>%
   flatten_chr()
-animo <- read.csv('../data/animo-labels.csv', header = F, skip = 1, stringsAsFactors = F) %>%
+animo <- read.csv('../raw-data/animo-labels.csv', header = F, skip = 1, stringsAsFactors = F) %>%
   set_names(var_names)
-dxa <- read_excel('../data/Nosotros DXA Data Final KH.xlsx')
-blood <- read.csv('../data/animo-blood.csv', stringsAsFactors = F)
-food_base <- read.csv('../data/Animo_baselinesum2009r_sw.csv', stringsAsFactors = F)
-food_week_12 <- read.csv('../data/Animo_12wksum2009r_sw.csv', stringsAsFactors = F)
-food_week_24 <- read.csv('../data/Animo_24wsum2009r_sw.csv', stringsAsFactors = F)
+dxa <- read_excel('../raw-data/Nosotros DXA Data Final KH.xlsx')
+blood <- read.csv('../raw-data/animo-blood.csv', stringsAsFactors = F)
+food_base <- read.csv('../raw-data/Animo_baselinesum2009r_sw.csv', stringsAsFactors = F)
+food_week_12 <- read.csv('../raw-data/Animo_12wksum2009r_sw.csv', stringsAsFactors = F)
+food_week_24 <- read.csv('../raw-data/Animo_24wsum2009r_sw.csv', stringsAsFactors = F)
 
 
 # clean amino data --------------------------------------------------------
@@ -62,8 +62,8 @@ animo <- animo %>%
     moderate_PA_minutes = ifelse(mod_rec_gpaq == "No",
                                  0,
                                  vigorous_PA_minutes),
-    total_PA_minutes = vigorous_PA_minutes + moderate_PA_minutes
-  ) %>% select(-ends_with('gpaq'))
+    ltpa = vigorous_PA_minutes + moderate_PA_minutes
+  ) %>% select(-ends_with('gpaq'), -moderate_PA_minutes, -vigorous_PA_minutes)
 
 
 # clean food data ---------------------------------------------------------
@@ -173,4 +173,6 @@ animo <- animo %>%
 
 # save cleaned data -------------------------------------------------------
 
-save(animo, file = "../data/animo-cleaned.Rdata")
+save(animo, file = "../data/animo-efficacy-clean.Rdata")
+
+write_csv(animo, "../data/animo-efficacy-clean.csv")
