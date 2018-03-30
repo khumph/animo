@@ -1,4 +1,4 @@
-.*
-!.gitignore
+.Rproj.user
+.DS_Store
 testing.R
 extra/
