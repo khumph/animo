@@ -6,3 +6,4 @@ extra/
 randomization-list.csv
 results/
 api-token.mk
+*cache
