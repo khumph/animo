@@ -1,0 +1,56 @@
+---
+title: "ANIMO trial statistical analysis plan"
+author: "Melanie Bell and Kyle Humphrey"
+date: "First draft: May 2016"
+output: 
+  word_document: default 
+  html_document: default
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../results") })
+---
+
+```{r setup, echo=F}
+knitr::opts_chunk$set(
+  cache = T,
+  echo = F,
+  warning = F,
+  message = F
+)
+```
+
+_Statistical Analysis Plan_  
+The primary efficacy outcome was weight loss. Weight was modeled with a linear mixed effects model that included a random intercept for each participant and fixed effect terms for intervention group (GCSWLI, WLC), assessment occasion (as a categorical variable), and their interaction. Weight assessments taken at baseline, 12 weeks, and 24 weeks were included in the analysis. Weight loss at 12 weeks for each group was estimated using contrasts within this model and are reported with 95% confidence intervals. Similar models were used to analyze the secondary efficacy outcomes of body fat percentage, average caloric intake per day, minutes of leisure time physical activity per week, and cardiometabolic measures.
+
+_Treatment Satisfaction and Acceptability_  
+Participants were asked to rate their satisfaction with the intervention at 12 weeks and if they would recommend the program to others. Participants were also asked about their satisfaction with their overall progress and their progress on changing dietary habits, physical activity habits, and weight. Each item was rated on a Likert scale with higher scores indicating greater program favorability. The median and interquartile range of the ratings on these scales were calculated. Open-ended questions and personal interviews were also used to seek participant input on modifications that could be made to improve acceptability and effectiveness of the intervention. Counts and proportions of participants attending weekly counseling sessions, completing self-monitoring of dietary intake, engaging in physical activity, and self-weighing were also calculated.
+
+```{r sample-size}
+# number of participants required
+diff_kg <- 5 # Want to detect 5 kg difference in weight
+sd_kg <- 5 # SD of difference of 5 kg
+pow <- 0.8 # 80% power
+alpha <- 0.05
+sampsi <-
+  power.t.test(
+    delta = diff_kg,
+    sd = sd_kg,
+    power = pow,
+    sig.level = alpha
+  )
+
+n_per_group <- ceiling(sampsi$n)
+# actual sd observed:
+```
+
+```{r ci-width}
+# worst case width of 95% confidence interval for proportion feasibility outcomes
+p = 0.5 # proportion that maximizes CI width of binomial 
+n = 50 # total participants
+margin_error_raw <- 1.96 * sqrt((p * (1 - p)) / n)
+
+ci_width <- round( 2 * margin_error_raw, 2)
+margin_error <- round(margin_error_raw, 2)
+```
+
+_Sample Size Justification_  
+Since this is a pilot study and our objective is to assess feasibility, we did not undertake formal sample size calculations for efficacy outcomes. However, it was determined that `r n_per_group` subjects per treatment condition (`r n_per_group * 2` total participants) would be needed to complete the intervention for a t-test to detect a `r diff_kg` kg difference between groups at a type 1 error rate of `r alpha` and `r pow * 100`% power, assuming a standard deviation of `r sd_kg` kg. Results from this study will be used to estimate sample sizes for a larger clinical trial. The sample size (`r n` total participants) also provides a 95% confidence interval of width no more than `r ci_width` (±`r margin_error`) for proportion feasibility outcomes.
