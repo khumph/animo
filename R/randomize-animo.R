@@ -1,7 +1,7 @@
 library(pacman)
 p_load(tidyverse, blockrand)
 
-#' Create and save randomization list
+#' Create and save block randomized randomization list
 #'
 #' Creates a random permuted block randomization list, blocks of size 2-4, two
 #' groups, with four strata defined by the combinations of diabetes status

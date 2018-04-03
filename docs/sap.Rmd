@@ -2,11 +2,6 @@
 title: "ANIMO trial statistical analysis plan"
 author: "Melanie Bell and Kyle Humphrey"
 date: "First draft: May 2016"
-output: 
-  word_document: default 
-  html_document: default
-knit: (function(inputFile, encoding) {
-  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../results") })
 ---
 
 ```{r setup, echo=F}
@@ -25,7 +20,7 @@ _Treatment Satisfaction and Acceptability_
 Participants were asked to rate their satisfaction with the intervention at 12 weeks and if they would recommend the program to others. Participants were also asked about their satisfaction with their overall progress and their progress on changing dietary habits, physical activity habits, and weight. Each item was rated on a Likert scale with higher scores indicating greater program favorability. The median and interquartile range of the ratings on these scales were calculated. Open-ended questions and personal interviews were also used to seek participant input on modifications that could be made to improve acceptability and effectiveness of the intervention. Counts and proportions of participants attending weekly counseling sessions, completing self-monitoring of dietary intake, engaging in physical activity, and self-weighing were also calculated.
 
 ```{r sample-size}
-# number of participants required
+# number of participants required to detect difference in weight lost between groups
 diff_kg <- 5 # Want to detect 5 kg difference in weight
 sd_kg <- 5 # SD of difference of 5 kg
 pow <- 0.8 # 80% power
