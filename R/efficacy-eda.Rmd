@@ -18,7 +18,7 @@ select <- dplyr::select
 ```
 
 ```{r load cleaned data}
-load('../data/animo-efficacy-cleaned.Rdata')
+load('../processed-data/animo-efficacy-cleaned.Rdata')
 animo <- animo %>% mutate(participant_id = str_replace(participant_id, "HMS3-\\d", ""))
 ```
 
