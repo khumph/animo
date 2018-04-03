@@ -1,9 +1,11 @@
+.*
+!.gitignore
 .Rproj.user
-.DS_Store
 testing.R
-extra/
-*data/
-randomization-list.csv
+tokens/
+data*/
 results/
-api-token.mk
+methods/
+extra/
 *cache
+
