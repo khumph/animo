@@ -1,51 +1,65 @@
-include api-token.mk
-
 SRC_DIR=R
 RAND_SRC=randomize-animo.R
-RAND_CSV=randomization-list.csv
 SAP_SRC=sap.Rmd
-SAP_DOCX=sap.docx
+SAP_DOC=sap.html
 RESULTS_DIR=results
+METHODS_DIR=methods
+RAND_CSV=randomization-list.csv
 WRITEUP_DIR=docs
-RAW_DIR=raw-data
-ANIMO_CSV=animo.csv
+RAW_DIR=data-raw
+RAW_CSVS=$(RAW_DIR)/animo.csv $(RAW_DIR)/blood.csv
+TOKEN_DIR=tokens
+TOKEN_FILES=$(wildcard $(TOKEN_DIR)/*.token)
+RAW_CSVS=$(patsubst $(TOKEN_DIR)/%.token, $(RAW_DIR)/%.csv, $(TOKEN_FILES))
+
+## all          : Make all files
+.PHONY : all
+all : sap randomize pull
 
 ## sap          : Generate the SAP (including sample size justification).
 .PHONY : sap
-sap : $(RESULTS_DIR)/$(SAP_DOCX)
+sap : $(METHODS_DIR)/$(SAP_DOC)
 
-$(RESULTS_DIR)/$(SAP_DOCX) : $(WRITEUP_DIR)/$(SAP_SRC)
-	R -e 'rmarkdown::render("$<", output_format = "word_document", output_file = "$@", output_dir = "$(RESULTS_DIR)")'
+$(METHODS_DIR)/$(SAP_DOC) : $(WRITEUP_DIR)/$(SAP_SRC)
+	@mkdir -p $(METHODS_DIR)
+	R -e 'rmarkdown::render("$<", output_format = "html_document", \
+	  output_file = "$(SAP_DOC)", output_dir = "$(METHODS_DIR)")'
 
 
 ## randomize   : Generate randomization list.
 .PHONY : randomize
-randomize : $(RAND_CSV)
+randomize : $(METHODS_DIR)/$(RAND_CSV)
 
-$(RAND_CSV) : $(SRC_DIR)/$(RAND_SRC)
+$(METHODS_DIR)/$(RAND_CSV) : $(SRC_DIR)/$(RAND_SRC)
+	@mkdir -p $(METHODS_DIR)
 	Rscript $< 9 50 $@ # second argument: seed, third: total # of participants
 
 
 ## clean       : Remove auto-generated files.
 .PHONY : clean
 clean :
-	rm -f $(RAND_CSV)
-	rm -f $(RESULTS_DIR)/$(SAP_DOCX)
+	rm -fR $(METHODS_DIR)
+	rm -fR $(RESULTS_DIR)
 
 
-## pull        : Download data from REDCap (must have API token).
+## clean-data  : Removed data downloaded from REDCap
+.PHONY : clean-data
+	rm -f $(RAW_CSVS)
+
+
+## pull        : Download data from REDCap (must have API tokens).
 .PHONY : pull
-pull : $(RAW_DIR)/$(ANIMO_CSV)
+pull : $(RAW_CSVS)
 
-$(RAW_DIR)/$(ANIMO_CSV) : api-token.mk
+$(RAW_DIR)/%.csv : $(TOKEN_DIR)/%.token
 	@mkdir -p $(RAW_DIR)
 	curl -X POST https://redcap.uahs.arizona.edu/api/ \
-	  -d token=$(API_TOKEN) \
-	  -d content=record \
-	  -d format=csv \
-	  -d rawOrLabel=label \
-	  -d rawOrLabelHeaders=raw \
-	  > $@
+	    -d token=$$(head -1 $<) \
+	    -d content=record \
+	    -d format=csv \
+	    -d rawOrLabel=label \
+	    -d rawOrLabelHeaders=raw \
+	    > $@
 
 
 ## help        : Show arguments and what they do.
