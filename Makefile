@@ -1,7 +1,7 @@
 SRC_DIR=R
 RAND_SRC=randomize-animo.R
 SAP_SRC=sap.Rmd
-SAP_DOC=sap.html
+SAP_DOC=sap.docx
 RESULTS_DIR=results
 METHODS_DIR=methods
 RAND_CSV=randomization-list.csv
@@ -12,8 +12,7 @@ TOKEN_FILES=$(wildcard $(TOKEN_DIR)/*.token)
 RAW_CSVS=$(patsubst $(TOKEN_DIR)/%.token, $(RAW_DIR)/%.csv, $(TOKEN_FILES))
 CLEAN_DIR=data-processed
 CLEAN_CSVS=$(wildcard $(CLEAN_DIR)/*.csv)
-CLEAN_SRCS=$(wildcard $(SRC_DIR)/clean*.R)
-
+RENDER_SRC=$(SRC_DIR)/render.R
 
 ## all         : Make all files
 .PHONY : all
@@ -24,10 +23,9 @@ all : sap randomize pull process
 .PHONY : sap
 sap : $(METHODS_DIR)/$(SAP_DOC)
 
-$(METHODS_DIR)/$(SAP_DOC) : $(WRITEUP_DIR)/$(SAP_SRC)
+$(METHODS_DIR)/$(SAP_DOC) : $(RENDER_SRC) $(WRITEUP_DIR)/$(SAP_SRC) 
 	@mkdir -p $(METHODS_DIR)
-	R -e 'rmarkdown::render("$<", output_format = "html_document", \
-	  output_file = "$(SAP_DOC)", output_dir = "$(METHODS_DIR)")'
+	Rscript $^ $(SAP_DOC) $(METHODS_DIR)
 
 
 ## randomize   : Generate randomization list.
