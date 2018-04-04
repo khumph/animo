@@ -11,12 +11,11 @@ clean <- function(df) {
 
 main <- function() {
   args <- commandArgs(trailingOnly = T)
-  input_file <- args[1]
-  output_file <- args[2]
+  input_file <- args
 
   read.csv(input_file, stringsAsFactors = F) %>%
     clean() %>%
-    write.csv(file = output_file, row.names = F)
+    write.csv(row.names = F)
 }
 
 

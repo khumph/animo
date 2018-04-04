@@ -50,17 +50,21 @@ derive_ltpa <- function(animo) {
 }
 
 
+clean <- function(df) {
+  df %>% clean_animo() %>%
+    derive_ltpa() %>%
+    select(participant_id, group, week, weight, waist, age, ltpa)
+}
+
+
 main <- function() {
   args <- commandArgs(trailingOnly = T)
-  functions_file <- args[1]
-  input_file <- args[2]
-  output_file <- args[3]
+  input_file <- args
 
-  source(functions_file)
-
-  load_data(input_file) %>% clean_animo() %>% derive_ltpa() %>%
-    select(participant_id, group, week, weight, waist, age, ltpa) %>%
-    write.csv(file = output_file, row.names = F)
+  read.csv(input_file, stringsAsFactors = F) %>%
+    clean() %>%
+    write.csv(row.names = F)
 }
+
 
 main()

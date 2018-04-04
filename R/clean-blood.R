@@ -1,6 +1,6 @@
 library(tidyverse)
 
-clean_blood <- function(blood) {
+clean <- function(df) {
   blood_base_labels <-
     tibble(
       old = c(
@@ -30,7 +30,7 @@ clean_blood <- function(blood) {
     t() %>%
     as.vector()
 
-  blood <- blood %>%
+  blood <- df %>%
     # remove variables that also match variables of interest
     select(-starts_with("cholesterol_hdlc_ratio")) %>%
     # convert id to match animo
@@ -53,14 +53,11 @@ clean_blood <- function(blood) {
 
 main <- function() {
   args <- commandArgs(trailingOnly = T)
-  functions_file <- args[1]
-  input_file <- args[2]
-  output_file <- args[3]
+  input_file <- args
 
-  source(functions_file)
-
-  load_data(input_file) %>% clean_blood() %>%
-    write.csv(file = output_file, row.names = F)
+  read.csv(input_file, stringsAsFactors = F) %>%
+    clean() %>%
+    write.csv(row.names = F)
 }
 
 main()
