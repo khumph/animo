@@ -9,9 +9,10 @@ WRITEUP_DIR=docs
 RAW_DIR=data-raw
 TOKEN_DIR=tokens
 TOKEN_FILES=$(wildcard $(TOKEN_DIR)/*.token)
-RAW_CSVS=$(patsubst $(TOKEN_DIR)/%.token, $(RAW_DIR)/%.csv, $(TOKEN_FILES))
+RAW_CSVS=$(patsubst $(TOKEN_DIR)/%.token, $(RAW_DIR)/%.csv, $(TOKEN_FILES)) \
+ $(RAW_DIR)/dxa.csv
 CLEAN_DIR=data-processed
-CLEAN_CSVS=$(wildcard $(CLEAN_DIR)/*.csv)
+CLEAN_CSVS=$(patsubst $(RAW_DIR)/%.csv, $(CLEAN_DIR)/%.csv, $(RAW_CSVS))
 RENDER_SRC=$(SRC_DIR)/render.R
 
 ## all         : Make all files
@@ -37,7 +38,7 @@ $(METHODS_DIR)/$(RAND_CSV) : $(SRC_DIR)/$(RAND_SRC)
 	Rscript $< 9 50 $@ # second argument: seed, third: total # of participants
 
 
-## pull        : Download data from REDCap (must have API tokens).
+## pull        : Get raw data (from REDCap, or convert from xlsx)
 .PHONY : pull
 pull : $(RAW_CSVS)
 
@@ -51,12 +52,15 @@ $(RAW_DIR)/%.csv : $(TOKEN_DIR)/%.token
 	    -d rawOrLabelHeaders=raw \
 	    > $@
 
+$(RAW_DIR)/%.csv : $(RAW_DIR)/%.xlsx
+	Rscript $(SRC_DIR)/convert-excel-csv.R $< $@
+
 
 ## process     : Process raw data.
 .PHONY : process
 process : $(CLEAN_CSVS)
 
- $(CLEAN_DIR)/%.csv : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%.csv
+$(CLEAN_DIR)/%.csv : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%.csv
 	mkdir -p $(CLEAN_DIR)
 	Rscript $^ $@
 
