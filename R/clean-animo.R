@@ -1,25 +1,5 @@
 library(tidyverse)
 
-#' Load data
-#'
-#' Loads data into the currrent environment, detects how to load based on
-#' filename extension
-#'
-#' Currently working with .csv and .xlsx files
-#'
-#' @param filename quoted name of file (with filetype extension, e.g., .csv)
-#' @param directory quoted path to the directory in which the file resides
-#' @return a data frame created from the file
-load_data <- function(filename) {
-  filetype <- str_split(filename, pattern = "\\.", simplify = T)[1, -1]
-
-  if (filetype == "csv") {
-    read.csv(filename, stringsAsFactors = F) %>% as_tibble()
-  } else if (filetype == "xlsx") {
-    read_excel(filename)
-  }
-}
-
 #' Clean ANIMO data
 clean_animo <- function(animo) {
   animo %>%
@@ -72,9 +52,15 @@ derive_ltpa <- function(animo) {
 
 main <- function() {
   args <- commandArgs(trailingOnly = T)
-  load_data(args[1]) %>% clean_animo() %>% derive_ltpa() %>%
+  functions_file <- args[1]
+  input_file <- args[2]
+  output_file <- args[3]
+
+  source(functions_file)
+
+  load_data(input_file) %>% clean_animo() %>% derive_ltpa() %>%
     select(participant_id, group, week, weight, waist, age, ltpa) %>%
-    write.csv(file = args[2], row.names = F)
+    write.csv(file = output_file, row.names = F)
 }
 
 main()
