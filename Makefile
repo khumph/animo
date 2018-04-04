@@ -12,8 +12,10 @@ TOKEN_FILES=$(wildcard $(TOKEN_DIR)/*.token)
 RAW_CSVS=$(patsubst $(TOKEN_DIR)/%.token, $(RAW_DIR)/%.csv, $(TOKEN_FILES)) \
  $(RAW_DIR)/dxa.csv
 CLEAN_DIR=data-processed
-CLEAN_CSVS=$(patsubst $(RAW_DIR)/%.csv, $(CLEAN_DIR)/%.csv, $(RAW_CSVS))
+CLEAN_CSVS=$(patsubst $(RAW_DIR)/%.csv, $(CLEAN_DIR)/%.csv, $(RAW_CSVS)) \
+$(CLEAN_DIR)/food.csv
 RENDER_SRC=$(SRC_DIR)/render.R
+
 
 ## all         : Make all files
 .PHONY : all
@@ -61,8 +63,11 @@ $(RAW_DIR)/%.csv : $(RAW_DIR)/%.xlsx
 process : $(CLEAN_CSVS)
 
 $(CLEAN_DIR)/%.csv : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%.csv
-	mkdir -p $(CLEAN_DIR)
-	Rscript $^ $@
+	@mkdir -p $(CLEAN_DIR)
+	Rscript $^ > $@
+
+$(CLEAN_DIR)/food.csv : $(SRC_DIR)/clean-food.R $(wildcard $(RAW_DIR)/food*.csv)
+	Rscript $^ > $@
 
 
 ## remove      : Remove auto-generated files.
@@ -74,7 +79,7 @@ remove :
 	rm -f $(WRITEUP_DIR)/*cache
 
 
-## remove-raw  : Removed data downloaded from REDCap.
+## remove-raw  : Removed data downloaded from REDCap, converted from other data.
 .PHONY : remove-raw
 remove-raw :
 	rm -f $(RAW_CSVS)
