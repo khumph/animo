@@ -27,18 +27,22 @@ CLEAN_CSVS=$(patsubst $(RAW_DIR)/%.csv, $(CLEAN_DIR)/%.csv, $(RAW_CSVS)) \
   $(CLEAN_DIR)/food.csv
 JOINED_CSV=$(CLEAN_DIR)/all.csv
 
+TABLES_SRC=$(SRC_DIR)/efficacy-tables.Rmd
+TFUNCS_SRC=$(SRC_DIR)/table-functions.R
+TABLES_DOC=$(RESULTS_DIR)/efficacy-tables.html
+
 
 
 ## all         : Make all files
 .PHONY : all
-all : sap randomize pull process
+all : sap randomize pull process eff-tables
 
 
 ## sap         : Generate the SAP (including sample size justification).
 .PHONY : sap
 sap : $(SAP_DOC)
 
-$(SAP_DOC) : $(SAP_SRC) $(RENDER_SRC) 
+$(SAP_DOC) : $(SAP_SRC) $(RENDER_SRC)
 	@mkdir -p $(METHODS_DIR)
 	$(RENDER_EXE) $< $(SAP_DOC)
 
@@ -78,8 +82,17 @@ $(CLEAN_DIR)/%.csv : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%*.csv
 	@mkdir -p $(CLEAN_DIR)
 	Rscript $^ > $@
 
-$(JOINED_CSV) : $(CLEAN_CSVS) $(JOIN_SRC) 
+$(JOINED_CSV) : $(CLEAN_CSVS) $(JOIN_SRC)
 	$(JOIN_EXE) $^ > $@
+
+
+## eff-tables  : Generate efficacy outcome tables.
+.PHONY : eff-tables
+tables : $(TABLES_DOC)
+
+$(TABLES_DOC) : $(TABLES_SRC) $(RENDER_SRC) $(TFUNCS_SRC)
+	@mkdir -p $(RESULTS_DIR)
+	$(RENDER_EXE) $< $@
 
 
 ## remove      : Remove auto-generated files.
@@ -89,6 +102,7 @@ remove :
 	rm -fR $(CLEAN_DIR)
 	rm -fR $(RESULTS_DIR)
 	rm -fR $(WRITEUP_DIR)/*cache
+	rm -fR $(SRC_DIR)/*cache
 
 
 ## remove-raw  : Removed data downloaded from REDCap, converted from other data.
