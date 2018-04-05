@@ -1,20 +1,32 @@
 SRC_DIR=R
-RAND_SRC=randomize-animo.R
-SAP_SRC=sap.Rmd
-SAP_DOC=sap.docx
-RESULTS_DIR=results
-METHODS_DIR=methods
-RAND_CSV=randomization-list.csv
 WRITEUP_DIR=docs
-RAW_DIR=data-raw
+METHODS_DIR=methods
 TOKEN_DIR=tokens
+RAW_DIR=data-raw
+CLEAN_DIR=data-processed
+RESULTS_DIR=results
+
+RAND_SRC=$(SRC_DIR)/randomize-animo.R
+RAND_EXE=Rscript $(RAND_SRC)
+
+RENDER_SRC=$(SRC_DIR)/render.R
+RENDER_EXE=Rscript $(RENDER_SRC)
+
+JOIN_SRC=$(SRC_DIR)/join-csvs.R
+JOIN_EXE=Rscript $(JOIN_SRC)
+
+CONVERT_SRC=$(SRC_DIR)/convert-excel-csv.R
+
+RAND_CSV=$(METHODS_DIR)/randomization-list.csv
+SAP_SRC=$(WRITEUP_DIR)/sap.Rmd
+SAP_DOC= $(METHODS_DIR)/sap.docx
 TOKEN_FILES=$(wildcard $(TOKEN_DIR)/*.token)
 RAW_CSVS=$(patsubst $(TOKEN_DIR)/%.token, $(RAW_DIR)/%.csv, $(TOKEN_FILES)) \
- $(RAW_DIR)/dxa.csv
-CLEAN_DIR=data-processed
+  $(RAW_DIR)/dxa.csv
 CLEAN_CSVS=$(patsubst $(RAW_DIR)/%.csv, $(CLEAN_DIR)/%.csv, $(RAW_CSVS)) \
-$(CLEAN_DIR)/food.csv
-RENDER_SRC=$(SRC_DIR)/render.R
+  $(CLEAN_DIR)/food.csv
+JOINED_CSV=$(CLEAN_DIR)/all.csv
+
 
 
 ## all         : Make all files
@@ -24,23 +36,23 @@ all : sap randomize pull process
 
 ## sap         : Generate the SAP (including sample size justification).
 .PHONY : sap
-sap : $(METHODS_DIR)/$(SAP_DOC)
+sap : $(SAP_DOC)
 
-$(METHODS_DIR)/$(SAP_DOC) : $(RENDER_SRC) $(WRITEUP_DIR)/$(SAP_SRC) 
+$(SAP_DOC) : $(SAP_SRC) $(RENDER_SRC) 
 	@mkdir -p $(METHODS_DIR)
-	Rscript $^ $(SAP_DOC) $(METHODS_DIR)
+	$(RENDER_EXE) $< $(SAP_DOC)
 
 
 ## randomize   : Generate randomization list.
 .PHONY : randomize
-randomize : $(METHODS_DIR)/$(RAND_CSV)
+randomize : $(RAND_CSV)
 
-$(METHODS_DIR)/$(RAND_CSV) : $(SRC_DIR)/$(RAND_SRC)
+$(RAND_CSV) : $(RAND_SRC)
 	@mkdir -p $(METHODS_DIR)
-	Rscript $< 9 50 $@ # second argument: seed, third: total # of participants
+	$(RAND_EXE) 9 50 $@
 
 
-## pull        : Get raw data (from REDCap, or convert from xlsx)
+## pull        : Get raw data (from REDCap, and/or convert from xlsx)
 .PHONY : pull
 pull : $(RAW_CSVS)
 
@@ -54,20 +66,20 @@ $(RAW_DIR)/%.csv : $(TOKEN_DIR)/%.token
 	    -d rawOrLabelHeaders=raw \
 	    > $@
 
-$(RAW_DIR)/%.csv : $(RAW_DIR)/%.xlsx
-	Rscript $(SRC_DIR)/convert-excel-csv.R $< $@
+$(RAW_DIR)/%.csv : $(CONVERT_SRC) $(RAW_DIR)/%.xlsx
+	Rscript $^ $@
 
 
 ## process     : Process raw data.
 .PHONY : process
-process : $(CLEAN_CSVS)
+process : $(CLEAN_CSVS) $(JOINED_CSV)
 
-$(CLEAN_DIR)/%.csv : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%.csv
+$(CLEAN_DIR)/%.csv : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%*.csv
 	@mkdir -p $(CLEAN_DIR)
 	Rscript $^ > $@
 
-$(CLEAN_DIR)/food.csv : $(SRC_DIR)/clean-food.R $(wildcard $(RAW_DIR)/food*.csv)
-	Rscript $^ > $@
+$(JOINED_CSV) : $(CLEAN_CSVS) $(JOIN_SRC) 
+	$(JOIN_EXE) $^ > $@
 
 
 ## remove      : Remove auto-generated files.
@@ -76,7 +88,7 @@ remove :
 	rm -fR $(METHODS_DIR)
 	rm -fR $(CLEAN_DIR)
 	rm -fR $(RESULTS_DIR)
-	rm -f $(WRITEUP_DIR)/*cache
+	rm -fR $(WRITEUP_DIR)/*cache
 
 
 ## remove-raw  : Removed data downloaded from REDCap, converted from other data.
