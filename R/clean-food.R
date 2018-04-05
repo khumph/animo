@@ -15,10 +15,10 @@ clean <- function(food_dfs_list) {
     c(0L, 12L, 24L),
     ~ .x %>%
       # subset to variables of interest in each df
-      select(sid, kcals_per_day = ener) %>%
+      select(participant_id = sid, kcals_per_day = ener) %>%
       # convert ids to match animo, add week variable
       mutate(
-        participant_id = parse_integer(sid),
+        participant_id = parse_integer(participant_id),
         week = .y
       )
   )
