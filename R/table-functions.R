@@ -1,8 +1,7 @@
-
 # modeling ----------------------------------------------------------------
 
 run_models <- function(labels_df, df) {
-  model_list <- map(
+  map(
     names(labels_df),
     ~ lmer(
       as.formula(paste(.x, '~', 'group * week + (1 | participant_id)')),
@@ -13,14 +12,14 @@ run_models <- function(labels_df, df) {
 
 # contrasts -------------------------------------------------------
 
-get_glhts <- function(linfct, models_list, labels_df) {
-  map(names(labels_df), ~ glht(models_list[[.x]], linfct)) %>%
+get_glhts <- function(linfct, model_list, labels_df) {
+  map(names(labels_df), ~ glht(model_list[[.x]], linfct)) %>%
     set_names(names(labels_df))
 }
 
-run_contrasts <- function(model_list, labels_df) {
+run_contrasts <- function(model_list, linfct_list, labels_df) {
   map(
-    list(linfct_means, linfct_diffs_base, linfct_diffs_grps),
+    linfct_list,
     ~ get_glhts(.x, model_list, labels_df)
   ) %>% set_names('means', 'diffs_base', 'diffs_grps')
 }
@@ -122,9 +121,9 @@ run_results <- function(glht_list, labels_df, df) {
 
 # everything all together -------------------------------------------------
 
-run_all <- function(labels_df, df, ...) {
+run_all <- function(labels_df, df, linfct_list, ...) {
   run_models(labels_df, df) %>%
-    run_contrasts(labels_df) %>%
+    run_contrasts(linfct_list, labels_df) %>%
     run_results(labels_df, df)
 }
 

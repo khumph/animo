@@ -1,4 +1,11 @@
 .*
 !.gitignore
+.Rproj.user
 testing.R
+tokens/
+data*/
+results/
+methods/
 extra/
+*cache
+

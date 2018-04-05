@@ -11,27 +11,58 @@ editor_options:
 
 ```{r setup, echo = F, warning = F, message = F}
 rm(list = ls())
-knitr::opts_chunk$set(warning = F, echo = F, message = F)
-library(pacman)
-p_load(Hmisc, readxl, lme4, multcomp, tidyverse, broom, Gmisc)
+knitr::opts_chunk$set(
+  cache = T,
+  echo = F,
+  warning = F,
+  message = F,
+  root.dir = '..'
+)
+knitr::opts_knit$set(root.dir = '..')
+pacman::p_load(Hmisc, lme4, multcomp, tidyverse, broom, Gmisc)
 select <- dplyr::select
 ```
 
-```{r, eval = F} 
-# change eval to T if you want to clean raw data
-source('clean-data.R')
-```
-
 ```{r load cleaned data}
-load('../processed-data/animo-efficacy-cleaned.Rdata')
+animo <- read.csv('data-processed/all.csv') %>%
+  # subset to weeks of interest, filter those who weren't randomized
+  filter(week %in% c(0, 12, 24), !is.na(group)) %>%
+  # change week and group to factors, label groups
+  mutate(week = factor(week),
+         group = factor(group, 0:1, c("WLC", "GCSWLI")))
+
 ```
 
 ```{r table functions}
-source('table-functions.R')
+source('R/table-functions.R')
 ```
 
 ```{r contrasts}
-source('contrasts.R')
+linfct_means <- rbind(
+  '0_WLC' = c(1, 0, 0, 0, 0, 0),
+  '12_WLC' = c(1, 0, 1, 0, 0, 0),
+  # '24_WLC' = c(1, 0, 0, 1, 0, 0),
+  '0_GCSWLI' = c(1, 1, 0, 0, 0, 0),
+  '12_GCSWLI' = c(1, 1, 1, 0, 1, 0),
+  '24_GCSWLI' = c(1, 1, 0, 1, 0, 1)
+)
+
+linfct_diffs_base <- rbind(
+  '12 - 0_WLC' = c(0, 0, 1, 0, 0, 0),
+  # '24 - 0_WLC' = c(0, 0, 0, 1, 0, 0),
+  '12 - 0_GCSWLI' = c(0, 0, 1, 0, 1, 0) #,
+  # '24 - 0_GCSWLI' = c(0, 0, 0, 1, 0, 1)
+)
+
+linfct_diffs_grps <- rbind(
+  # GCSWLI - WLC
+  # "GCSWLI" after underscore in name to print on the GCSWLI line in the table
+  '0_GCSWLI' = c(0, 1, 0, 0, 0, 0),
+  '12_GCSWLI' = c(0, 0, 0, 0, 1, 0) #,
+  # '24_GCSWLI - WLC' = c(0, 1, 0, 0, 0, 1)
+)
+
+linfct_list <- list(linfct_means, linfct_diffs_base, linfct_diffs_grps)
 ```
 
 ```{r macro measures variables and labels}
@@ -46,7 +77,7 @@ macro_labels <- tibble(
 ```
 
 ```{r macro models}
-macro_results <- run_all(macro_labels, animo)
+macro_results <- run_all(macro_labels, animo, linfct_list)
 ```
 
 ```{r macro mean table}
@@ -90,7 +121,7 @@ blood_labels <- blood_labels %>%
 ```
 
 ```{r blood models}
-blood_results <- run_all(blood_labels, animo)
+blood_results <- run_all(blood_labels, animo, linfct_list)
 ```
 
 ```{r cardiometabolic table}
