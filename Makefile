@@ -31,11 +31,14 @@ TABLES_SRC=$(SRC_DIR)/efficacy-tables.Rmd
 TFUNCS_SRC=$(SRC_DIR)/table-functions.R
 TABLES_DOC=$(RESULTS_DIR)/efficacy-tables.html
 
+WILCOX_SRC=$(SRC_DIR)/wilcox-tests-ltpa.R
+WILCOX_LTPA=$(RESULTS_DIR)/wilcox-ltpa.Rdata
+
 
 
 ## all         : Make all files
 .PHONY : all
-all : sap randomize pull process eff-tables
+all : sap randomize pull process eff-tables wilcox
 
 
 ## sap         : Generate the SAP (including sample size justification).
@@ -88,11 +91,20 @@ $(JOINED_CSV) : $(CLEAN_CSVS) $(JOIN_SRC)
 
 ## eff-tables  : Generate efficacy outcome tables.
 .PHONY : eff-tables
-tables : $(TABLES_DOC)
+eff-tables : $(TABLES_DOC)
 
 $(TABLES_DOC) : $(TABLES_SRC) $(RENDER_SRC) $(TFUNCS_SRC)
 	@mkdir -p $(RESULTS_DIR)
 	$(RENDER_EXE) $< $@
+
+
+## wilcox      : Run Wilcoxon tests on LTPA data.
+.PHONY : wilcox
+wilcox : $(WILCOX_LTPA)
+
+$(WILCOX_LTPA) : $(WILCOX_SRC) $(JOINED_CSV)
+	@mkdir -p $(RESULTS_DIR)
+	Rscript $^ $@
 
 
 ## remove      : Remove auto-generated files.
