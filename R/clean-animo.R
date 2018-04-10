@@ -7,7 +7,7 @@ clean_animo <- function(animo) {
     mutate(participant_id = str_sub(participant_id, -2) %>% as.integer()) %>%
     # put group assignment, age on every observation (not just when recorded)
     group_by(participant_id) %>%
-    mutate(group = group[1], age = age_esf[1]) %>%
+    mutate(age = age_esf[1]) %>%
     # change event names to weeks, and first event to week 0 (baseline)
     rowwise() %>%
     rename(week = redcap_event_name) %>%
@@ -49,11 +49,38 @@ derive_ltpa <- function(animo) {
     )
 }
 
+convert_to_numeric <- function(variable) {
+  ifelse(
+    variable == "Very Satisfied",
+    "4",
+    ifelse(
+      variable ==
+        "Neither Satisfied Nor Dissatisfied",
+      "0",
+      ifelse(variable == "Very Dissatisfied",
+             "-4",
+             variable)
+    )
+  ) %>% as.numeric()
+}
+
+clean_satisfaction <- function(df) {
+  df %>%
+    rowwise() %>%
+    mutate_at(vars(starts_with("chng"), progress_why_tss),
+              funs(convert_to_numeric(.))) %>%
+    mutate_at(vars(satisfied_tss, rec_tss),
+              funs(ifelse(. == "", NA, .))) %>%
+    ungroup()
+}
 
 clean <- function(df) {
-  df %>% clean_animo() %>%
+  df %>%
+    clean_animo() %>%
     derive_ltpa() %>%
-    select(participant_id, group, week, weight, waist, age, ltpa)
+    select(participant_id, group, week, weight, waist, age, ltpa,
+           ends_with("tss")) %>%
+    clean_satisfaction()
 }
 
 
