@@ -1,0 +1,166 @@
+---
+title: "ANIMO feasibility results"
+author: "Kyle Humphrey"
+output: html_document
+---
+
+```{r setup, echo = F, message = F, warning = F}
+knitr::opts_chunk$set(
+  cache = T,
+  echo = F,
+  warning = F,
+  message = F,
+  fig.align = "center",
+  root.dir = '..'
+)
+knitr::opts_knit$set(root.dir = '..')
+pacman::p_load(magrittr, tidyverse, plotly, Gmisc)
+select <- dplyr::select
+```
+
+```{r load data}
+animo <- read.csv("./data-processed/all.csv", stringsAsFactors = F)
+screen <- read.csv("./data-raw/screen.csv", stringsAsFactors = F)
+```
+
+```{r format data}
+animo <- animo %>% mutate(group = factor(group, 0:1, c("WLC", "GCSWLI")))
+```
+
+
+# Recruitment
+
+```{r recruitment}
+num_screened <- nrow(screen)
+num_eligible <- sum(screen$eligible_esf == "Yes")
+num_ineligible <- sum(screen$eligible_esf == "No")
+num_enrolled <- animo %>% select(participant_id) %>% distinct() %>% nrow()
+```
+
+`r num_screened` were screened for eligibility, of these, `r num_eligible` were eligible, and `r num_ineligible` were ineligible for study inclusion. `r num_enrolled` participants enrolled in the trial. Since recruitment lasted approximately from June through August 2016, approximately `r round(num_enrolled/12, 1)` participants were enrolled per week, exceeding the target of 2.2 per week.
+
+The two participants who weren't randomized were removed in everything below.
+
+```{r remove non-randomized}
+animo <- animo %>% filter(!is.na(group))
+animo_clean <- animo
+```
+
+
+# Retention
+```{r retention}
+map(
+  c(12, 24),
+  ~ animo %>%
+    filter(week == .x) %>%
+    summarise(present = sum(!is.na(weight)),
+              total = nrow(.))
+) %>%
+  map_df(~ Hmisc::binconf(x = .$present, n = .$total) %>%
+           signif(2) %>%
+           as_data_frame()) %>%
+  mutate(Week = c(12, 24),
+         `95% CI` = paste0("(", Lower, ", ", Upper, ")")) %>%
+  select(Week, "Proportion retained" = PointEst,
+         `95% CI`, -Lower, -Upper) %>%
+  knitr::kable(align = "c")
+```
+
+A participant was classified as retained in the study at week 12 or 24 if a weight measurement was recorded for that week.
+
+
+# Satisfaction
+```{r}
+animo <- animo %>%
+  # mutate_at(vars(starts_with("chng"), progress_why_tss), funs(as.double)) %>%
+  mutate(
+    satisfied_tss = factor(
+      satisfied_tss,
+      levels = c(
+        "Very Dissatisfied",
+        "Somewhat Dissatisfied",
+        "Somewhat Satisfied",
+        "Very Satisfied"
+      )
+    ),
+    rec_tss = factor(
+      rec_tss,
+      levels = c(
+        "Definitely Not",
+        "Probably Not",
+        "Probably Would",
+        "Definitely Would"
+      )
+    )
+  )
+```
+  
+```{r}
+satisfaction_labs <-
+  tibble(
+    name = c(
+    'satisfied_tss',
+    'rec_tss',
+    'progress_why_tss',
+    'chng_weight_tss',
+    'chng_diet_tss',
+    'chng_pa_tss'
+  ), 
+  label = c( 
+   "How satisfied are you overall with the weight management program?",
+   "Would you recommend the weight management program you received to others?",
+   paste("Given the effort you put into following the weight management",
+         "program, how satisfied are you with your overall progress over the",
+         "past 12 weeks?"),
+   "Changing your weight",
+   "Changing your dietary habits",
+   "Changing your physical activity habits"
+    )
+  )
+
+satisfaction_labs$label[4:6] <- paste( 
+  paste("Given the effort you put into following the weight management",
+        "program for the past 12 weeks, how satisfied are you overall with your",
+        "progress on..."),
+  satisfaction_labs$label[4:6]
+)
+```
+
+```{r, results="asis"}
+satisfaction_table <- function(df) {
+  map(
+    satisfaction_labs$name,
+    ~ getDescriptionStatsBy(df[[.x]], df$group,
+                            continuous_fn = describeMedian)
+  )
+}
+
+weeks <- c(12, 24)
+descrip_stats <- map(weeks, ~ filter(animo, week == .x)) %>%
+  map(satisfaction_table) %>%
+  set_names(paste0("week", weeks))
+
+n.rgroups <- map(descrip_stats, ~ map_int(.x, nrow))
+
+tables <- descrip_stats %>% map(reduce, rbind)
+
+# remove WLC column which doesn't have data at week 12
+tables$week12 <- tables$week12[ , 2, drop = F]
+
+captions <- c("Satisfaction at week 12", "Satisfaction at week 24")
+pwalk(
+  list(tables, n.rgroups, captions), ~
+    htmlTable(
+      ..1,
+      rgroup = satisfaction_labs$label,
+      n.rgroup = ..2,
+      caption = ..3,
+      tfoot = paste("Given the effort... questions were answered on a scale from",
+                    "-4 (very dissatisfied) to 4 (very satisfied).")
+    ) %>% print()
+)
+```
+
+
+
+
