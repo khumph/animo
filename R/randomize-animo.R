@@ -1,5 +1,4 @@
-library(pacman)
-p_load(tidyverse, blockrand)
+pacman::p_load(tidyverse, blockrand)
 
 #' Create and save block randomized randomization list
 #'
