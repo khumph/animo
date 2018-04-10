@@ -24,13 +24,12 @@ select <- dplyr::select
 ```
 
 ```{r load cleaned data}
-animo <- read.csv('data-processed/all.csv') %>%
+load("./data-processed/animo.Rdata")
+animo <- animo %>% 
   # subset to weeks of interest, filter those who weren't randomized
   filter(week %in% c(0, 12, 24), !is.na(group)) %>%
   # change week and group to factors, label groups
-  mutate(week = factor(week),
-         group = factor(group, 0:1, c("WLC", "GCSWLI")))
-
+  mutate(week = factor(week))
 ```
 
 ```{r table functions}

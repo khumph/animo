@@ -1,6 +1,7 @@
 ---
 title: "ANIMO feasibility results"
 author: "Kyle Humphrey"
+date: "`r format(Sys.time(), '%B %d %Y')`"
 output: html_document
 ---
 
@@ -14,17 +15,13 @@ knitr::opts_chunk$set(
   root.dir = '..'
 )
 knitr::opts_knit$set(root.dir = '..')
-pacman::p_load(magrittr, tidyverse, plotly, Gmisc)
+pacman::p_load(tidyverse, Gmisc)
 select <- dplyr::select
 ```
 
 ```{r load data}
-animo <- read.csv("./data-processed/all.csv", stringsAsFactors = F)
-screen <- read.csv("./data-raw/screen.csv", stringsAsFactors = F)
-```
-
-```{r format data}
-animo <- animo %>% mutate(group = factor(group, 0:1, c("WLC", "GCSWLI")))
+load("./data-processed/animo.Rdata")
+screen <- read_csv("./data-raw/screen.csv")
 ```
 
 
@@ -39,11 +36,10 @@ num_enrolled <- animo %>% select(participant_id) %>% distinct() %>% nrow()
 
 `r num_screened` were screened for eligibility, of these, `r num_eligible` were eligible, and `r num_ineligible` were ineligible for study inclusion. `r num_enrolled` participants enrolled in the trial. Since recruitment lasted approximately from June through August 2016, approximately `r round(num_enrolled/12, 1)` participants were enrolled per week, exceeding the target of 2.2 per week.
 
-The two participants who weren't randomized were removed in everything below.
+Two participants dropped out of the trial before randomization and were removed from all analyses.
 
 ```{r remove non-randomized}
 animo <- animo %>% filter(!is.na(group))
-animo_clean <- animo
 ```
 
 
@@ -70,31 +66,6 @@ A participant was classified as retained in the study at week 12 or 24 if a weig
 
 
 # Satisfaction
-```{r}
-animo <- animo %>%
-  # mutate_at(vars(starts_with("chng"), progress_why_tss), funs(as.double)) %>%
-  mutate(
-    satisfied_tss = factor(
-      satisfied_tss,
-      levels = c(
-        "Very Dissatisfied",
-        "Somewhat Dissatisfied",
-        "Somewhat Satisfied",
-        "Very Satisfied"
-      )
-    ),
-    rec_tss = factor(
-      rec_tss,
-      levels = c(
-        "Definitely Not",
-        "Probably Not",
-        "Probably Would",
-        "Definitely Would"
-      )
-    )
-  )
-```
-  
 ```{r}
 satisfaction_labs <-
   tibble(
@@ -160,7 +131,4 @@ pwalk(
     ) %>% print()
 )
 ```
-
-
-
 

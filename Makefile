@@ -1,40 +1,4 @@
-SRC_DIR=R
-WRITEUP_DIR=docs
-METHODS_DIR=methods
-TOKEN_DIR=tokens
-RAW_DIR=data-raw
-CLEAN_DIR=data-processed
-RESULTS_DIR=results
-
-RAND_SRC=$(SRC_DIR)/randomize-animo.R
-RAND_EXE=Rscript $(RAND_SRC)
-
-RENDER_SRC=$(SRC_DIR)/render.R
-RENDER_EXE=Rscript $(RENDER_SRC)
-
-JOIN_SRC=$(SRC_DIR)/join-csvs.R
-JOIN_EXE=Rscript $(JOIN_SRC)
-
-CONVERT_SRC=$(SRC_DIR)/convert-excel-csv.R
-
-RAND_CSV=$(METHODS_DIR)/randomization-list.csv
-SAP_SRC=$(WRITEUP_DIR)/sap.Rmd
-SAP_DOC= $(METHODS_DIR)/sap.docx
-TOKEN_FILES=$(wildcard $(TOKEN_DIR)/*.token)
-RAW_CSVS=$(RAW_DIR)/animo.csv $(RAW_DIR)/blood.csv $(RAW_DIR)/dxa.csv
-CLEAN_CSVS=$(patsubst $(RAW_DIR)/%.csv, $(CLEAN_DIR)/%.csv, $(RAW_CSVS)) \
-  $(CLEAN_DIR)/food.csv
-JOINED_CSV=$(CLEAN_DIR)/all.csv
-
-TABLES_SRC=$(SRC_DIR)/efficacy-tables.Rmd
-TFUNCS_SRC=$(SRC_DIR)/table-functions.R
-TABLES_DOC=$(RESULTS_DIR)/efficacy-tables.html
-
-WILCOX_SRC=$(SRC_DIR)/wilcox-ltpa.R
-WILCOX_LTPA=$(RESULTS_DIR)/wilcox-ltpa.Rdata
-
-FEAS_SRC=$(SRC_DIR)/feasibility-tables.Rmd
-FEAS_DOC=$(RESULTS_DIR)/feasibility-tables.html
+include config.mk
 
 
 ## all         : Make all files
@@ -80,7 +44,7 @@ $(RAW_DIR)/%.csv : $(CONVERT_SRC) $(RAW_DIR)/%.xlsx
 
 ## process     : Process raw data.
 .PHONY : process
-process : $(CLEAN_CSVS) $(JOINED_CSV)
+process : $(FORMATTED_DATA)
 
 $(CLEAN_DIR)/%.csv : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%*.csv
 	@mkdir -p $(CLEAN_DIR)
@@ -89,12 +53,15 @@ $(CLEAN_DIR)/%.csv : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%*.csv
 $(JOINED_CSV) : $(CLEAN_CSVS) $(JOIN_SRC)
 	$(JOIN_EXE) $^ > $@
 
+$(FORMATTED_DATA) : $(JOINED_CSV) $(FORMAT_SRC)
+	$(FORMAT_EXE) $< $@
+
 
 ## feasibility   : Generate feasibility results.
 .PHONY : feasibility
 feasibility : $(FEAS_DOC)
 
-$(FEAS_DOC) : $(FEAS_SRC) $(RENDER_SRC) $(JOINED_CSV)
+$(FEAS_DOC) : $(FEAS_SRC) $(RENDER_SRC) $(FORMATTED_DATA)
 	@mkdir -p $(RESULTS_DIR)
 	$(RENDER_EXE) $< $@
 
@@ -103,7 +70,7 @@ $(FEAS_DOC) : $(FEAS_SRC) $(RENDER_SRC) $(JOINED_CSV)
 .PHONY : eff-tables
 eff-tables : $(TABLES_DOC)
 
-$(TABLES_DOC) : $(TABLES_SRC) $(RENDER_SRC) $(TFUNCS_SRC) $(JOINED_CSV)
+$(TABLES_DOC) : $(TABLES_SRC) $(RENDER_SRC) $(TFUNCS_SRC) $(FORMATTED_DATA)
 	@mkdir -p $(RESULTS_DIR)
 	$(RENDER_EXE) $< $@
 
@@ -112,7 +79,7 @@ $(TABLES_DOC) : $(TABLES_SRC) $(RENDER_SRC) $(TFUNCS_SRC) $(JOINED_CSV)
 .PHONY : wilcox
 wilcox : $(WILCOX_LTPA)
 
-$(WILCOX_LTPA) : $(WILCOX_SRC) $(JOINED_CSV)
+$(WILCOX_LTPA) : $(WILCOX_SRC) $(FORMATTED_DATA)
 	@mkdir -p $(RESULTS_DIR)
 	Rscript $^ $@
 
