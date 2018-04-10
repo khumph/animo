@@ -1,7 +1,9 @@
 #' Render an Rmd document
 #'
 #' Automatically determine output directory and output format based on a
-#' specified path
+#' specified path, e.g., results/output_doc.html would knit an html file
+#' "output_doc.html" in the results subdirectory of the present working
+#' directory.
 #'
 #' Currently only inplemented to knit word or html documents
 #'
