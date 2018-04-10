@@ -21,8 +21,7 @@ RAND_CSV=$(METHODS_DIR)/randomization-list.csv
 SAP_SRC=$(WRITEUP_DIR)/sap.Rmd
 SAP_DOC= $(METHODS_DIR)/sap.docx
 TOKEN_FILES=$(wildcard $(TOKEN_DIR)/*.token)
-RAW_CSVS=$(patsubst $(TOKEN_DIR)/%.token, $(RAW_DIR)/%.csv, $(TOKEN_FILES)) \
-  $(RAW_DIR)/dxa.csv
+RAW_CSVS=$(RAW_DIR)/animo.csv $(RAW_DIR)/blood.csv $(RAW_DIR)/dxa.csv
 CLEAN_CSVS=$(patsubst $(RAW_DIR)/%.csv, $(CLEAN_DIR)/%.csv, $(RAW_CSVS)) \
   $(CLEAN_DIR)/food.csv
 JOINED_CSV=$(CLEAN_DIR)/all.csv
@@ -31,14 +30,16 @@ TABLES_SRC=$(SRC_DIR)/efficacy-tables.Rmd
 TFUNCS_SRC=$(SRC_DIR)/table-functions.R
 TABLES_DOC=$(RESULTS_DIR)/efficacy-tables.html
 
-WILCOX_SRC=$(SRC_DIR)/wilcox-tests-ltpa.R
+WILCOX_SRC=$(SRC_DIR)/wilcox-ltpa.R
 WILCOX_LTPA=$(RESULTS_DIR)/wilcox-ltpa.Rdata
 
+FEAS_SRC=$(SRC_DIR)/feasibility-tables.Rmd
+FEAS_DOC=$(RESULTS_DIR)/feasibility-tables.html
 
 
 ## all         : Make all files
 .PHONY : all
-all : sap randomize pull process eff-tables wilcox
+all : sap randomize pull process eff-tables wilcox feasibility
 
 
 ## sap         : Generate the SAP (including sample size justification).
@@ -61,7 +62,7 @@ $(RAND_CSV) : $(RAND_SRC)
 
 ## pull        : Get raw data (from REDCap, and/or convert from xlsx)
 .PHONY : pull
-pull : $(RAW_CSVS)
+pull : $(RAW_CSVS) $(RAW_DIR)/screen.csv
 
 $(RAW_DIR)/%.csv : $(TOKEN_DIR)/%.token
 	@mkdir -p $(RAW_DIR)
@@ -89,11 +90,20 @@ $(JOINED_CSV) : $(CLEAN_CSVS) $(JOIN_SRC)
 	$(JOIN_EXE) $^ > $@
 
 
+## feasibility   : Generate feasibility results.
+.PHONY : feasibility
+feasibility : $(FEAS_DOC)
+
+$(FEAS_DOC) : $(FEAS_SRC) $(RENDER_SRC) $(JOINED_CSV)
+	@mkdir -p $(RESULTS_DIR)
+	$(RENDER_EXE) $< $@
+
+
 ## eff-tables  : Generate efficacy outcome tables.
 .PHONY : eff-tables
 eff-tables : $(TABLES_DOC)
 
-$(TABLES_DOC) : $(TABLES_SRC) $(RENDER_SRC) $(TFUNCS_SRC)
+$(TABLES_DOC) : $(TABLES_SRC) $(RENDER_SRC) $(TFUNCS_SRC) $(JOINED_CSV)
 	@mkdir -p $(RESULTS_DIR)
 	$(RENDER_EXE) $< $@
 
