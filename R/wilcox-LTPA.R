@@ -5,28 +5,40 @@ main <- function() {
   input_file <- args[1]
   output_file <- args[2]
 
-  ltpa <- read.csv(input_file) %>%
+  load(input_file)
+
+  weeks <- c(0, 12)
+
+  animo <- animo %>%
     # subset to weeks of interest, filter those who weren't randomized
-    filter(week %in% c(0, 12), !is.na(group)) %>%
-    select(participant_id, group, week, ltpa) %>%
-    # change week and group to factors, label groups
-    mutate(week = as.character(week),
-           group = factor(group, 0:1, c("WLC", "GCSWLI")) %>% as.character())
+    filter(week %in% weeks, !is.na(group))
 
   # Wilcoxon signed rank for difference from baseline within each group
+  groups <- levels(animo$group)
+
   wilcox_from_baseline <- map(
-    c("GCSWLI", "WLC"), ~
-      ltpa %>% filter(week == "0" | week == "12", group == .x) %>%
-      wilcox.test(ltpa ~ week, paired = T, data = ., na.action = na.pass)
-  ) %>% set_names(c("GCSWILI_12_0", "WLC_12_0"))
+    groups,
+    ~
+      wilcox.test(
+        ltpa ~ week,
+        data = filter(animo, group == .x),
+        paired = T,
+        na.action = na.pass
+      )
+  ) %>%
+    set_names(groups)
 
 
   # Wilcoxon rank sum for difference between groups at week 0 (baseline) and week 12
   wilcox_btwn_groups <- map(
-    c("0", "12"), ~
-      wilcox.test(ltpa ~ group, data = ltpa %>% filter(week == .x))
+    weeks, ~
+      wilcox.test(
+        ltpa ~ group,
+        data = filter(animo, week == .x)
+      )
   ) %>%
-    set_names(c("week_0", "week_12"))
+    set_names(paste("week", weeks, sep = "_"))
+
 
   save(wilcox_btwn_groups, wilcox_from_baseline, file = output_file)
 }
