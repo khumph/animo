@@ -20,17 +20,20 @@ select <- dplyr::select
 ```
 
 ```{r load data}
-load("./data-processed/animo.Rdata")
-screen <- read_csv("./data-raw/screen.csv")
+animo <- read_rds("./data-processed/animo-formatted.rds")
+screen <- read_csv("./data-raw/screen.csv",
+                   col_types = cols(.default = col_character())) %>%
+  select(eligible_esf)
 ```
+
 
 
 # Recruitment
 
 ```{r recruitment}
 num_screened <- nrow(screen)
-num_eligible <- sum(screen$eligible_esf == "Yes")
-num_ineligible <- sum(screen$eligible_esf == "No")
+num_eligible <- sum(screen$eligible_esf == "1")
+num_ineligible <- sum(screen$eligible_esf == "0")
 num_enrolled <- animo %>% select(participant_id) %>% distinct() %>% nrow()
 ```
 
@@ -43,7 +46,9 @@ animo <- animo %>% filter(!is.na(group))
 ```
 
 
+
 # Retention
+
 ```{r retention}
 weeks <- c(12, 24)
 map(
@@ -66,7 +71,9 @@ map(
 A participant was classified as retained in the study at week 12 or 24 if a weight measurement was recorded for that week.
 
 
+
 # Satisfaction
+
 ```{r}
 satisfaction_labs <-
   tibble(

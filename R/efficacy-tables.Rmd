@@ -24,8 +24,7 @@ select <- dplyr::select
 ```
 
 ```{r load cleaned data}
-load("./data-processed/animo.Rdata")
-animo <- animo %>% 
+animo <- read_rds("./data-processed/animo-formatted.rds") %>% 
   # subset to weeks of interest, filter those who weren't randomized
   filter(week %in% c(0, 12, 24), !is.na(group)) %>%
   # change week and group to factors, label groups

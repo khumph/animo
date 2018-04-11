@@ -5,7 +5,7 @@ main <- function() {
   input_file <- args[1]
   output_file <- args[2]
 
-  load(input_file)
+  animo <- read_rds(input_file)
 
   weeks <- c(0, 12)
 

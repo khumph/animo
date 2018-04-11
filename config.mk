@@ -22,16 +22,14 @@ PULL_SRC=pull-from-REDCap.sh
 PULL_EXE=bash $(PULL_SRC)
 TOKEN_FILES=$(wildcard $(TOKEN_DIR)/*.token)
 RAW_CSVS=$(RAW_DIR)/animo.csv $(RAW_DIR)/blood.csv $(RAW_DIR)/dxa.csv
-CLEAN_CSVS=$(patsubst $(RAW_DIR)/%.csv, $(CLEAN_DIR)/%.csv, $(RAW_CSVS)) \
-  $(CLEAN_DIR)/food.csv
+CLEAN_RDSS=$(patsubst $(RAW_DIR)/%.csv, $(CLEAN_DIR)/%.rds, $(RAW_CSVS)) \
+  $(CLEAN_DIR)/food.rds
 
-JOIN_SRC=$(SRC_DIR)/join-csvs.R
-JOIN_EXE=Rscript $(JOIN_SRC)
-JOINED_CSV=$(CLEAN_DIR)/all.csv
+JOIN_SRC=$(SRC_DIR)/join-data.R
+JOINED_DATA=$(CLEAN_DIR)/all.rds
 
-FORMAT_SRC=$(SRC_DIR)/format-animo.R
-FORMAT_EXE=Rscript $(FORMAT_SRC)
-FORMATTED_DATA=$(CLEAN_DIR)/animo.Rdata
+FORMAT_SRC=$(SRC_DIR)/format-data.R
+FORMATTED_DATA=$(CLEAN_DIR)/animo-formatted.rds
 
 TABLES_SRC=$(SRC_DIR)/efficacy-tables.Rmd
 TFUNCS_SRC=$(SRC_DIR)/table-functions.R

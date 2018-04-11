@@ -53,11 +53,13 @@ clean <- function(df) {
 
 main <- function() {
   args <- commandArgs(trailingOnly = T)
-  input_file <- args
+  input_file <- args[1]
+  output_file <- args[2]
 
-  read.csv(input_file, stringsAsFactors = F) %>%
+  read_csv(input_file,
+           col_types = cols(.default = col_character())) %>%
     clean() %>%
-    write.csv(row.names = F)
+    write_rds(output_file)
 }
 
 main()

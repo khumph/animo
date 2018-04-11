@@ -40,16 +40,16 @@ $(RAW_DIR)/%.csv : $(CONVERT_SRC) $(RAW_DIR)/%.xlsx
 .PHONY : process
 process : $(FORMATTED_DATA)
 
-$(CLEAN_DIR)/%.csv : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%*.csv \
+$(CLEAN_DIR)/%.rds : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%*.csv \
                      $(SRC_DIR)/clean-%*.R
 	@mkdir -p $(CLEAN_DIR)
-	Rscript $^ > $@
+	Rscript $^ $@
 
-$(JOINED_CSV) : $(CLEAN_CSVS) $(JOIN_SRC)
-	$(JOIN_EXE) $^ > $@
+$(JOINED_DATA) : $(JOIN_SRC) $(CLEAN_RDSS)
+	Rscript $^ $@
 
-$(FORMATTED_DATA) : $(JOINED_CSV) $(FORMAT_SRC)
-	$(FORMAT_EXE) $< $@
+$(FORMATTED_DATA) : $(FORMAT_SRC) $(JOINED_DATA)
+	Rscript $^ $@
 
 
 ## feasibility : Generate feasibility results.

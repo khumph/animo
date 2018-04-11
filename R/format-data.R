@@ -2,10 +2,12 @@ library(tidyverse)
 
 main <- function() {
   args <- commandArgs(trailingOnly = T)
-  input_csv <- args[1]
-  output_Rdata <- args[2]
+  # input file is first command line argument
+  input_file <- args[1]
+  # output file is second command line argument
+  output_file <- args[2]
 
-  animo <- read_csv(input_csv) %>%
+  animo <- read_rds(input_file) %>%
     mutate(
       # change group to factor, label
       group = factor(group, 0:1, c("WLC", "GCSWLI")),
@@ -32,7 +34,7 @@ main <- function() {
       )
     )
 
-  save(animo, file = output_Rdata)
+  write_rds(animo, path = output_file)
 }
 
 main()
