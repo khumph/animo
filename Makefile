@@ -38,17 +38,14 @@ $(RAW_DIR)/%.csv : $(CONVERT_SRC) $(RAW_DIR)/%.xlsx
 
 ## process     : Process raw data.
 .PHONY : process
-process : $(FORMATTED_DATA)
+process : $(FULL_DATA)
 
 $(CLEAN_DIR)/%.rds : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%*.csv \
                      $(SRC_DIR)/clean-%*.R
 	@mkdir -p $(CLEAN_DIR)
 	Rscript $^ $@
 
-$(JOINED_DATA) : $(JOIN_SRC) $(CLEAN_RDSS)
-	Rscript $^ $@
-
-$(FORMATTED_DATA) : $(FORMAT_SRC) $(JOINED_DATA)
+$(FULL_DATA) : $(JOIN_SRC) $(CLEAN_RDSS)
 	Rscript $^ $@
 
 
@@ -56,7 +53,7 @@ $(FORMATTED_DATA) : $(FORMAT_SRC) $(JOINED_DATA)
 .PHONY : feasibility
 feasibility : $(FEAS_DOC)
 
-$(FEAS_DOC) : $(FEAS_SRC) $(RENDER_SRC) $(FORMATTED_DATA)
+$(FEAS_DOC) : $(FEAS_SRC) $(RENDER_SRC) $(FULL_DATA)
 	@mkdir -p $(RESULTS_DIR)
 	$(RENDER_EXE) $< $@
 
@@ -65,7 +62,7 @@ $(FEAS_DOC) : $(FEAS_SRC) $(RENDER_SRC) $(FORMATTED_DATA)
 .PHONY : eff-tables
 eff-tables : $(TABLES_DOC)
 
-$(TABLES_DOC) : $(TABLES_SRC) $(RENDER_SRC) $(TFUNCS_SRC) $(FORMATTED_DATA)
+$(TABLES_DOC) : $(TABLES_SRC) $(RENDER_SRC) $(TFUNCS_SRC) $(FULL_DATA)
 	@mkdir -p $(RESULTS_DIR)
 	$(RENDER_EXE) $< $@
 
@@ -74,7 +71,7 @@ $(TABLES_DOC) : $(TABLES_SRC) $(RENDER_SRC) $(TFUNCS_SRC) $(FORMATTED_DATA)
 .PHONY : wilcox
 wilcox : $(WILCOX_LTPA)
 
-$(WILCOX_LTPA) : $(WILCOX_SRC) $(FORMATTED_DATA)
+$(WILCOX_LTPA) : $(WILCOX_SRC) $(FULL_DATA)
 	@mkdir -p $(RESULTS_DIR)
 	Rscript $^ $@
 

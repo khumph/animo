@@ -26,10 +26,7 @@ CLEAN_RDSS=$(patsubst $(RAW_DIR)/%.csv, $(CLEAN_DIR)/%.rds, $(RAW_CSVS)) \
   $(CLEAN_DIR)/food.rds
 
 JOIN_SRC=$(SRC_DIR)/join-data.R
-JOINED_DATA=$(CLEAN_DIR)/all.rds
-
-FORMAT_SRC=$(SRC_DIR)/format-data.R
-FORMATTED_DATA=$(CLEAN_DIR)/animo-formatted.rds
+FULL_DATA=$(CLEAN_DIR)/animo-full.rds
 
 TABLES_SRC=$(SRC_DIR)/efficacy-tables.Rmd
 TFUNCS_SRC=$(SRC_DIR)/table-functions.R

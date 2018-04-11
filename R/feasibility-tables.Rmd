@@ -20,7 +20,7 @@ select <- dplyr::select
 ```
 
 ```{r load data}
-animo <- read_rds("./data-processed/animo-formatted.rds")
+animo <- read_rds("./data-processed/animo-full.rds")
 screen <- read_csv("./data-raw/screen.csv",
                    col_types = cols(.default = col_character())) %>%
   select(eligible_esf)
