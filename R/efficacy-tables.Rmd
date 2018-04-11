@@ -1,7 +1,7 @@
 ---
 title: "ANIMO efficacy outcome tables"
 author: "Kyle Humphrey"
-date: "`r format(Sys.time(), '%B %d %Y')`"
+date: "`r format(Sys.time(), '%B %e %Y')`"
 output: html_document
 knit: (function(inputFile, encoding) {
   rmarkdown::render(inputFile, encoding = encoding, output_dir = "../results") })

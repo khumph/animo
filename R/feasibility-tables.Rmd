@@ -1,7 +1,7 @@
 ---
 title: "ANIMO feasibility results"
 author: "Kyle Humphrey"
-date: "`r format(Sys.time(), '%B %d %Y')`"
+date: "`r format(Sys.time(), '%B %e %Y')`"
 output: html_document
 ---
 
@@ -45,8 +45,9 @@ animo <- animo %>% filter(!is.na(group))
 
 # Retention
 ```{r retention}
+weeks <- c(12, 24)
 map(
-  c(12, 24),
+  weeks,
   ~ animo %>%
     filter(week == .x) %>%
     summarise(present = sum(!is.na(weight)),
@@ -55,7 +56,7 @@ map(
   map_df(~ Hmisc::binconf(x = .$present, n = .$total) %>%
            signif(2) %>%
            as_data_frame()) %>%
-  mutate(Week = c(12, 24),
+  mutate(Week = weeks,
          `95% CI` = paste0("(", Lower, ", ", Upper, ")")) %>%
   select(Week, "Proportion retained" = PointEst,
          `95% CI`, -Lower, -Upper) %>%
