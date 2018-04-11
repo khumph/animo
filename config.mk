@@ -18,6 +18,8 @@ SAP_DOC= $(METHODS_DIR)/sap.docx
 
 CONVERT_SRC=$(SRC_DIR)/convert-excel-csv.R
 
+PULL_SRC=pull-from-REDCap.sh
+PULL_EXE=bash $(PULL_SRC)
 TOKEN_FILES=$(wildcard $(TOKEN_DIR)/*.token)
 RAW_CSVS=$(RAW_DIR)/animo.csv $(RAW_DIR)/blood.csv $(RAW_DIR)/dxa.csv
 CLEAN_CSVS=$(patsubst $(RAW_DIR)/%.csv, $(CLEAN_DIR)/%.csv, $(RAW_CSVS)) \

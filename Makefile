@@ -28,15 +28,9 @@ $(RAND_CSV) : $(RAND_SRC)
 .PHONY : pull
 pull : $(RAW_CSVS) $(RAW_DIR)/screen.csv
 
-$(RAW_DIR)/%.csv : $(TOKEN_DIR)/%.token
+$(RAW_DIR)/%.csv : $(TOKEN_DIR)/%.token $(PULL_SRC)
 	@mkdir -p $(RAW_DIR)
-	curl -X POST https://redcap.uahs.arizona.edu/api/ \
-	    -d token=$$(head -1 $<) \
-	    -d content=record \
-	    -d format=csv \
-	    -d rawOrLabel=label \
-	    -d rawOrLabelHeaders=raw \
-	    > $@
+	$(PULL_EXE) $< > $@
 
 $(RAW_DIR)/%.csv : $(CONVERT_SRC) $(RAW_DIR)/%.xlsx
 	Rscript $^ $@
@@ -46,7 +40,8 @@ $(RAW_DIR)/%.csv : $(CONVERT_SRC) $(RAW_DIR)/%.xlsx
 .PHONY : process
 process : $(FORMATTED_DATA)
 
-$(CLEAN_DIR)/%.csv : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%*.csv
+$(CLEAN_DIR)/%.csv : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%*.csv \
+                     $(SRC_DIR)/clean-%*.R
 	@mkdir -p $(CLEAN_DIR)
 	Rscript $^ > $@
 
@@ -57,7 +52,7 @@ $(FORMATTED_DATA) : $(JOINED_CSV) $(FORMAT_SRC)
 	$(FORMAT_EXE) $< $@
 
 
-## feasibility   : Generate feasibility results.
+## feasibility : Generate feasibility results.
 .PHONY : feasibility
 feasibility : $(FEAS_DOC)
 
@@ -100,7 +95,7 @@ remove-raw :
 	rm -f $(RAW_CSVS)
 
 
-## help        : Show arguments and what they do.
+## help        : Show arguments to make and what they do.
 .PHONY : help
 help : Makefile
 	@sed -n 's/^##//p' $<
