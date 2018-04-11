@@ -39,7 +39,8 @@ clean <- function(df) {
     derive_ltpa() %>%
     select(participant_id, group, week, weight, waist, age = age_esf, ltpa,
            ends_with("tss"), ends_with("arma")) %>%
-    clean_satisfaction()
+    clean_satisfaction() %>%
+    clean_arsma()
 }
 
 
