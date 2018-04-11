@@ -12,7 +12,8 @@ main <- function() {
       # change satisfaction variables to factors
       satisfied_tss = factor(
         satisfied_tss,
-        levels = c(
+        levels = 1:4,
+        labels = c(
           "Very Dissatisfied",
           "Somewhat Dissatisfied",
           "Somewhat Satisfied",
@@ -21,7 +22,8 @@ main <- function() {
       ),
       rec_tss = factor(
         rec_tss,
-        levels = c(
+        levels = 1:4,
+        labels = c(
           "Definitely Not",
           "Probably Not",
           "Probably Would",
