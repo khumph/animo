@@ -1,7 +1,7 @@
 ---
 title: "ANIMO efficacy outcome tables"
 author: "Kyle Humphrey"
-date: "`r format(Sys.time(), '%B %d %Y')`"
+date: "`r format(Sys.time(), '%B %e %Y')`"
 output: html_document
 knit: (function(inputFile, encoding) {
   rmarkdown::render(inputFile, encoding = encoding, output_dir = "../results") })
@@ -13,6 +13,8 @@ editor_options:
 rm(list = ls())
 knitr::opts_chunk$set(
   cache = T,
+  cache.path = "../cache/eff/",
+  autodep = T,
   echo = F,
   warning = F,
   message = F,
@@ -24,13 +26,11 @@ select <- dplyr::select
 ```
 
 ```{r load cleaned data}
-animo <- read.csv('data-processed/all.csv') %>%
+animo <- read_rds("./data-processed/animo-full.rds") %>% 
   # subset to weeks of interest, filter those who weren't randomized
   filter(week %in% c(0, 12, 24), !is.na(group)) %>%
   # change week and group to factors, label groups
-  mutate(week = factor(week),
-         group = factor(group, 0:1, c("WLC", "GCSWLI")))
-
+  mutate(week = factor(week))
 ```
 
 ```{r table functions}

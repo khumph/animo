@@ -2,8 +2,10 @@ library(tidyverse)
 
 clean <- function(df) {
   df %>%
+    mutate_at(vars(`time point`, TB_tissue_pfat),
+              funs(parse_number)) %>%
     rename(participant_id = patient_id,
-           week = time.point,
+           week = `time point`,
            pct_fat = TB_tissue_pfat) %>%
     mutate(participant_id = str_sub(participant_id, -2) %>% as.integer(),
            week = (week - 1) * 12)
@@ -11,11 +13,13 @@ clean <- function(df) {
 
 main <- function() {
   args <- commandArgs(trailingOnly = T)
-  input_file <- args
+  input_file <- args[1]
+  output_file <- args[2]
 
-  read.csv(input_file, stringsAsFactors = F) %>%
+  read_csv(input_file,
+           col_types = cols(.default = col_character())) %>%
     clean() %>%
-    write.csv(row.names = F)
+    write_rds(output_file)
 }
 
 

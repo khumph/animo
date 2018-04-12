@@ -1,18 +1,20 @@
 library(tidyverse)
 
+
 #' Clean ANIMO data
 clean_animo <- function(animo) {
   animo %>%
-    # change id to a number
-    mutate(participant_id = str_sub(participant_id, -2) %>% as.integer()) %>%
-    # put group assignment, age on every observation (not just when recorded)
-    group_by(participant_id) %>%
-    mutate(group = group[1], age = age_esf[1]) %>%
-    # change event names to weeks, and first event to week 0 (baseline)
-    rowwise() %>%
-    rename(week = redcap_event_name) %>%
+    mutate_at(vars(starts_with("waist"), starts_with("weight"), bmi_paf),
+              funs(parse_number)) %>%
     mutate(
-      week = ifelse(week == 'Baseline', 0, parse_number(week)) %>% as.integer(),
+      # change id to a number
+      participant_id = str_sub(participant_id, -2) %>% as.integer(),
+      # change event names to weeks, and first event to week 0 (baseline)
+      week = parse_number(redcap_event_name),
+      week = ifelse(week == 1, 0, week) %>% as.integer()
+    ) %>%
+    rowwise() %>%
+    mutate(
       # derive measurements (average of those taken at each assessment)
       weight = mean(
         c(
@@ -26,44 +28,42 @@ clean_animo <- function(animo) {
         na.rm = T
       ),
       waist = mean(c(waist_1_paf, waist_2_paf, waist_3_paf), na.rm = T)
-    ) %>% ungroup()
-}
-
-
-#' Derive leasuire time physical activity
-derive_ltpa <- function(animo) {
-  animo %>%
-    rowwise() %>%
-    mutate(
-      vigorous_ltpa_minutes =
-        days_vig_rec_gpaq * (time_vig_rec_h_gpaq * 60 + time_vig_rec_min_gpaq),
-      vigorous_ltpa_minutes = ifelse(vig_rec_gpaq == "No",
-                                     0,
-                                     vigorous_ltpa_minutes),
-      moderate_ltpa_minutes =
-        days_mod_rec_gpaq * (time_mod_rec_h_gpaq * 60 + time_mod_rec_min_gpaq),
-      moderate_ltpa_minutes = ifelse(mod_rec_gpaq == "No",
-                                     0,
-                                     vigorous_ltpa_minutes),
-      ltpa = vigorous_ltpa_minutes + moderate_ltpa_minutes
-    )
+    ) %>%
+    ungroup()
 }
 
 
 clean <- function(df) {
-  df %>% clean_animo() %>%
+  df %>%
+    clean_animo() %>%
     derive_ltpa() %>%
-    select(participant_id, group, week, weight, waist, age, ltpa)
+    select(participant_id, group, week, weight, waist, age = age_esf, ltpa,
+           bmi_paf, ends_with("tss"), ends_with("arma"), ends_with("dq"),
+           starts_with("heritage")) %>%
+    clean_satisfaction() %>%
+    clean_heritage() %>%
+    clean_arsma() %>%
+    clean_dq() %>%
+    arrange(participant_id)
 }
 
 
 main <- function() {
   args <- commandArgs(trailingOnly = T)
-  input_file <- args
+  # input file is the first command line argument
+  input_file <- args[1]
+  # output file is the last command line argument
+  output_file <- tail(args, 1)
+  # dependencies are all command line arguments in between first and last
+  dependencies <- tail(args, -1) %>% head(-1)
 
-  read.csv(input_file, stringsAsFactors = F) %>%
+  # import all functions from dependencies (all clean-animo-*.R files)
+  walk(dependencies, source)
+
+  read_csv(input_file,
+           col_types = cols(.default = col_character())) %>%
     clean() %>%
-    write.csv(row.names = F)
+    write_rds(output_file)
 }
 
 
