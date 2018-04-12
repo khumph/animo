@@ -38,11 +38,12 @@ clean <- function(df) {
     clean_animo() %>%
     derive_ltpa() %>%
     select(participant_id, group, week, weight, waist, age = age_esf, ltpa,
-           ends_with("tss"), ends_with("arma"),
+           bmi_paf, ends_with("tss"), ends_with("arma"), ends_with("dq"),
            starts_with("heritage")) %>%
     clean_satisfaction() %>%
     clean_heritage() %>%
     clean_arsma() %>%
+    clean_dq() %>%
     arrange(participant_id)
 }
 
