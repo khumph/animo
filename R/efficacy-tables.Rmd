@@ -13,6 +13,8 @@ editor_options:
 rm(list = ls())
 knitr::opts_chunk$set(
   cache = T,
+  cache.path = "../cache/eff/",
+  autodep = T,
   echo = F,
   warning = F,
   message = F,
