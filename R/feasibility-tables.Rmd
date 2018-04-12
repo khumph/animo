@@ -17,8 +17,7 @@ knitr::opts_chunk$set(
   root.dir = '..'
 )
 knitr::opts_knit$set(root.dir = '..')
-pacman::p_load(tidyverse, Gmisc)
-select <- dplyr::select
+pacman::p_load(tidyverse, Gmisc, glue)
 ```
 
 ```{r load data}
@@ -53,20 +52,16 @@ animo <- animo %>% filter(!is.na(group))
 
 ```{r retention}
 weeks <- c(12, 24)
-map(
-  weeks,
-  ~ animo %>%
-    filter(week == .x) %>%
-    summarise(present = sum(!is.na(weight)),
-              total = nrow(.))
-) %>%
-  map_df(~ Hmisc::binconf(x = .$present, n = .$total) %>%
-           signif(2) %>%
-           as_data_frame()) %>%
-  mutate(Week = weeks,
-         `95% CI` = paste0("(", Lower, ", ", Upper, ")")) %>%
-  select(Week, "Proportion retained" = PointEst,
-         `95% CI`, -Lower, -Upper) %>%
+map(weeks,
+    ~ animo %>%
+      filter(week == .x) %>%
+      summarise(retained = sum(!is.na(weight)),
+                total = nrow(.))) %>%
+  map_df(
+    ~ Hmisc::binconf(x = .$retained, n = .$total) %>% signif(2) %>% as_tibble()
+  ) %>%
+  mutate(Week = weeks, `95% CI` = glue("({Lower}, {Upper})")) %>%
+  select(Week, "Proportion retained" = PointEst, `95% CI`, -Lower, -Upper) %>%
   knitr::kable(align = "c")
 ```
 
@@ -76,7 +71,7 @@ A participant was classified as retained in the study at week 12 or 24 if a weig
 
 # Satisfaction
 
-```{r}
+```{r satisfaction table setup}
 satisfaction_labs <-
   tibble(
     name = c(
@@ -107,12 +102,13 @@ satisfaction_labs$label[4:6] <- paste(
 )
 ```
 
-```{r, results="asis"}
+```{r make satisfaction tables, results="asis"}
 satisfaction_table <- function(df) {
   map(
     satisfaction_labs$name,
     ~ getDescriptionStatsBy(df[[.x]], df$group,
-                            continuous_fn = describeMedian)
+                            continuous_fn = describeMedian,
+                            add_total_col = T)
   )
 }
 
@@ -126,7 +122,7 @@ n.rgroups <- map(descrip_stats, ~ map_int(.x, nrow))
 tables <- descrip_stats %>% map(reduce, rbind)
 
 # remove WLC column which doesn't have data at week 12
-tables$week12 <- tables$week12[ , 2, drop = F]
+tables$week12 <- tables$week12[ , "GCSWLI", drop = F]
 
 captions <- c("Satisfaction at week 12", "Satisfaction at week 24")
 pwalk(
