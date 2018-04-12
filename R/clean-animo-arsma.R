@@ -26,7 +26,7 @@ clean_arsma <- function(df) {
       ),
       # mean MOS, score only Mexicans and Mexican Americans (who the scale is
       # designed for)
-      MOS_mean = ifelse(mexican | mexican_american, MOS / 17, NA),
+      MOS_mean = ifelse(mexican_heritage, MOS / 17, NA),
       # score AOS
       AOS = sum(
         english_arma,
@@ -45,7 +45,7 @@ clean_arsma <- function(df) {
       ),
       # mean AOS, score only Mexicans and Mexican Americans (who the scale is
       # designed for)
-      AOS_mean =  ifelse(mexican | mexican_american, AOS / 13, NA),
+      AOS_mean =  ifelse(mexican_heritage, AOS / 13, NA),
       # ARSMA score is difference between AOS mean and MOS mean
       arsma_score = AOS_mean - MOS_mean,
       # cateogrize ARMSA scores as in paper
