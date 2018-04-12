@@ -11,15 +11,25 @@ editor_options:
 
 ```{r setup, echo = F, warning = F, message = F}
 rm(list = ls())
-knitr::opts_chunk$set(warning = F, echo = F, message = F)
-library(pacman)
-p_load(tidyverse, plotly, GGally)
-select <- dplyr::select
+knitr::opts_chunk$set(
+  cache = T,
+  cache.path = "../cache/eda/",
+  autodep = T,
+  echo = F,
+  warning = F,
+  message = F,
+  fig.align = "center",
+  root.dir = '..'
+)
+knitr::opts_knit$set(root.dir = '..')
+pacman::p_load(tidyverse, plotly, GGally)
 ```
 
 ```{r load cleaned data}
-load('../processed-data/animo-efficacy-cleaned.Rdata')
-animo <- animo %>% mutate(participant_id = str_replace(participant_id, "HMS3-\\d", ""))
+animo <- read_rds('./data-processed/animo-full.rds') %>% 
+  mutate(
+    week = factor(week)
+  )
 ```
 
 ```{r}
@@ -34,17 +44,16 @@ y_dim <- 720
 ```
 
 ```{r blood variables}
-png("../results/pairs-blood.png", height = y_dim, width = x_dim)
+png("./results/pairs-blood.png", height = y_dim, width = x_dim)
 blood_pairs <- animo %>%
   select(week, group, one_of(variable_names_blood), -participant_id) %>%
   ggpairs()
 print(blood_pairs)
 dev.off()
-blood_pairs
 ```
 
 ```{r blood variables log transformed}
-png("../results/pairs-blood-log10.png", height = y_dim, width = x_dim)
+png("./results/pairs-blood-log10.png", height = y_dim, width = x_dim)
 blood_pairs_log <- animo %>%
   select(week, group, one_of(variable_names_blood), -participant_id) %>%
   mutate_at(vars(-week, -group), funs(log10)) %>%
@@ -55,7 +64,7 @@ blood_pairs_log
 ```
 
 ```{r macro variables}
-png("../results/pairs-macro.png", height = y_dim, width = x_dim)
+png("./results/pairs-macro.png", height = y_dim, width = x_dim)
 macro_pairs <- animo %>%
   select(week, group, one_of(variable_names_macro), -participant_id) %>%
   ggpairs()
@@ -65,7 +74,7 @@ macro_pairs
 ```
 
 ```{r macro variables transformed}
-png("../results/pairs-macro-log10.png", height = y_dim, width = x_dim)
+png("./results/pairs-macro-log10.png", height = y_dim, width = x_dim)
 macro_pairs_log <- animo %>%
   select(week, group, one_of(variable_names_macro), -participant_id) %>%
   mutate(ltpa = log10(ltpa + 1),
