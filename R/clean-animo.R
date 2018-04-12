@@ -38,9 +38,12 @@ clean <- function(df) {
     clean_animo() %>%
     derive_ltpa() %>%
     select(participant_id, group, week, weight, waist, age = age_esf, ltpa,
-           ends_with("tss"), ends_with("arma")) %>%
+           ends_with("tss"), ends_with("arma"),
+           starts_with("heritage")) %>%
     clean_satisfaction() %>%
-    clean_arsma()
+    clean_heritage() %>%
+    clean_arsma() %>%
+    arrange(participant_id)
 }
 
 
@@ -53,6 +56,7 @@ main <- function() {
   # dependencies are all command line arguments in between first and last
   dependencies <- tail(args, -1) %>% head(-1)
 
+  # import all functions from dependencies (all clean-animo-*.R files)
   walk(dependencies, source)
 
   read_csv(input_file,
