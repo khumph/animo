@@ -5,6 +5,7 @@ TOKEN_DIR=tokens
 RAW_DIR=data-raw
 CLEAN_DIR=data-processed
 RESULTS_DIR=results
+CACHE_DIR=cache
 
 RAND_SRC=$(SRC_DIR)/randomize-animo.R
 RAND_EXE=Rscript $(RAND_SRC)
@@ -28,9 +29,12 @@ CLEAN_RDSS=$(patsubst $(RAW_DIR)/%.csv, $(CLEAN_DIR)/%.rds, $(RAW_CSVS)) \
 JOIN_SRC=$(SRC_DIR)/join-data.R
 FULL_DATA=$(CLEAN_DIR)/animo-full.rds
 
-TABLES_SRC=$(SRC_DIR)/efficacy-tables.Rmd
-TFUNCS_SRC=$(SRC_DIR)/table-functions.R
-TABLES_DOC=$(RESULTS_DIR)/efficacy-tables.html
+DESCR_SRC=$(SRC_DIR)/baseline-table.Rmd
+DESCR_DOC=$(RESULTS_DIR)/baseline-table.html
+
+EFF_SRC=$(SRC_DIR)/efficacy-tables.Rmd
+EFF_FUNCS_SRC=$(SRC_DIR)/table-functions.R
+EFF_DOC=$(RESULTS_DIR)/efficacy-tables.html
 
 WILCOX_SRC=$(SRC_DIR)/wilcox-ltpa.R
 WILCOX_LTPA=$(RESULTS_DIR)/wilcox-ltpa.Rdata

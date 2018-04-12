@@ -8,8 +8,8 @@ clean_dq <- function(df) {
                                "No" = "0",
                                "Yes" = "1"),
       partner_dq = fct_recode(partner_dq,
-                               "No" = "0",
-                               "Yes" = "1"),
+                              "No" = "0",
+                              "Yes" = "1"),
       # collapse graduate degree into bachelors because only one person with
       # graduate degree
       grade_dq = fct_recode(
@@ -23,10 +23,11 @@ clean_dq <- function(df) {
       ),
       # All of the people who responded with an "other" language spoken at home
       # said they spoke both Spanish and English equally
-      lang_home_dq = factor(
+      lang_home_dq = fct_recode(
         lang_home_dq,
-        levels = c("English", "Spanish", "Other (Please Specify)"),
-        labels = c("English", "Spanish", "Both equally")
+        "English" = "0",
+        "Spanish" = "1",
+        "Both equally" = "2"
       )
     )
 

@@ -3,7 +3,7 @@ include config.mk
 
 ## all         : Make all files
 .PHONY : all
-all : sap randomize pull process eff-tables wilcox feasibility
+all : sap randomize pull process descr feas eff wilcox
 
 
 ## sap         : Generate the SAP (including sample size justification).
@@ -49,20 +49,29 @@ $(FULL_DATA) : $(JOIN_SRC) $(CLEAN_RDSS)
 	Rscript $^ $@
 
 
-## feasibility : Generate feasibility results.
-.PHONY : feasibility
-feasibility : $(FEAS_DOC)
+## feas        : Generate feasibility results.
+.PHONY : feas
+feas : $(FEAS_DOC)
 
 $(FEAS_DOC) : $(FEAS_SRC) $(RENDER_SRC) $(FULL_DATA)
 	@mkdir -p $(RESULTS_DIR)
 	$(RENDER_EXE) $< $@
 
 
-## eff-tables  : Generate efficacy outcome tables.
-.PHONY : eff-tables
-eff-tables : $(TABLES_DOC)
+## descr       : Generate participant characteristics table.
+.PHONY : descr
+descr : $(DESCR_DOC)
 
-$(TABLES_DOC) : $(TABLES_SRC) $(RENDER_SRC) $(TFUNCS_SRC) $(FULL_DATA)
+$(DESCR_DOC) : $(DESCR_SRC) $(RENDER_SRC) $(FULL_DATA)
+	@mkdir -p $(RESULTS_DIR)
+	$(RENDER_EXE) $< $@
+
+
+## eff         : Generate efficacy outcome tables.
+.PHONY : eff
+eff : $(EFF_DOC)
+
+$(EFF_DOC) : $(EFF_SRC) $(RENDER_SRC) $(EFF_FUNCS_SRC) $(FULL_DATA)
 	@mkdir -p $(RESULTS_DIR)
 	$(RENDER_EXE) $< $@
 
@@ -82,8 +91,7 @@ remove :
 	rm -fR $(METHODS_DIR)
 	rm -fR $(CLEAN_DIR)
 	rm -fR $(RESULTS_DIR)
-	rm -fR $(WRITEUP_DIR)/*cache
-	rm -fR $(SRC_DIR)/*cache
+	rm -fR $(CACHE_DIR)
 
 
 ## remove-raw  : Removed data downloaded from REDCap, converted from other data.

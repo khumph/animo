@@ -4,7 +4,7 @@ library(tidyverse)
 #' Clean ANIMO data
 clean_animo <- function(animo) {
   animo %>%
-    mutate_at(vars(starts_with("waist"), starts_with("weight")),
+    mutate_at(vars(starts_with("waist"), starts_with("weight"), bmi_paf),
               funs(parse_number)) %>%
     mutate(
       # change id to a number

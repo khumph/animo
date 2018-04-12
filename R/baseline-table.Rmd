@@ -1,0 +1,90 @@
+---
+title: "ANIMO baseline characteristics"
+author: "Kyle Humphrey"
+date: "Last updated on `r format(Sys.time(), '%B %e %Y')`"
+output: html_document
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(
+  cache = T,
+  cache.path = "../cache//base/",
+  autodep = T,
+  echo = F,
+  warning = F,
+  message = F,
+  root.dir = '..'
+)
+knitr::opts_knit$set(root.dir = '..')
+pacman::p_load(tidyverse, Gmisc)
+```
+
+
+```{r load data}
+base <- read_rds("data-processed/animo-full.rds") %>% 
+  # filter to baseline and only those who were randomized
+  filter(week == 0, !is.na(group))
+```
+
+
+```{r table setup}
+base <- base %>%
+  mutate(tot = factor(!is.na(participant_id), labels = "Total"),
+         heritage = fct_drop(heritage)) 
+
+labs <-
+  tribble(
+  ~nm,            ~lab,
+  "age",          "Age",
+  "weight",       "Weight (kg)",
+  "bmi_paf",      "BMI",
+  "waist",        "Waist circumference (cm)",
+  "employed_dq",  "Employed",
+  "grade_dq",     "Highest education completed",
+  "partner_dq",   "Married or lives with domestic partner",
+  "heritage",     "Heritage",
+  "lang_home_dq", "Primary language spoken at home",
+  "MOS_mean",     "Mean Mexican Orientation Subscale (MOS) of ARSMA-II",
+  "AOS_mean",     "Mean Anglo Orientation Subscale (AOS) of ARSMA-II",
+  "arsma_level",  "ARSMA-II Acculturation Level",
+  "tot",          "Total"
+)
+```
+
+
+```{r make table}
+describeMean_nopm <- function(...) {
+  describeMean(..., plusmin_str = "")
+}
+get_descrip  <- function(variable_name) {
+  output <- getDescriptionStatsBy(
+      base[[variable_name]], base$group,
+      continuous_fn = describeMean_nopm,
+      add_total_col = T,
+      statistics = variable_name != "tot"
+    ) 
+  if (variable_name == "tot") {
+    output <- cbind(output, "")
+  }
+  output
+}
+
+descrip_stats <- map(labs$nm, get_descrip)
+
+reduce(descrip_stats, rbind) %>% 
+  `rownames<-`(
+    rownames(.) %>%
+      str_replace("No .+", "No") %>%
+      str_replace("Missing", "Not applicable")
+  ) %>% 
+  htmlTable(
+    rgroup = head(labs$lab, -1),
+    n.rgroup = map_int(descrip_stats, nrow),
+    caption = "Baseline characteristics by randomized group",
+    tfoot = "P-values from Wilcoxon rank sum test for continuous variables and Fisher's exact test with simulated P-values for categorical variables",
+    total = T
+  )
+```
+
+Heritage was taken as the response (to the heritage question) given on two or more of the forms that the participant filled out (the same heritage question was asked on the screening form, demographics questionnaire, and on each of the three physical assessment forms--given at baseline, week 12, and week 24). Using this method, no one checked more than one category.
+
