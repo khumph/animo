@@ -41,3 +41,9 @@ WILCOX_LTPA=$(RESULTS_DIR)/wilcox-ltpa.Rdata
 
 FEAS_SRC=$(SRC_DIR)/feasibility-tables.Rmd
 FEAS_DOC=$(RESULTS_DIR)/feasibility-tables.html
+
+EFF_MODEL_SRC=$(SRC_DIR)/efficacy-models.R
+EFF_RAW_RESULTS=$(RESULTS_DIR)/efficacy-tables-data-unformatted.rds
+
+EFF_FORMAT_SRC=$(SRC_DIR)/efficacy-format-results.R
+EFF_RESULTS=$(RESULTS_DIR)/efficacy-tables-data.rds
