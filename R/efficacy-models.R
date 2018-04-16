@@ -22,7 +22,7 @@ main <- function() {
     "pct_fat",       "Percent body fat",                             F,
     "ltpa",          "LTPA<sup>d</sup>, minutes/week",               F,
     "kcals_per_day", "Average caloric intake<sup>e</sup>, kcal/day", T
-  )
+  ) %>% mutate(order = 1:nrow(.))
 
   blood_labels <- tribble(
     ~name_base,      ~label,            ~log_trans,
@@ -34,7 +34,7 @@ main <- function() {
     "ldl",           "LDL Cholesterol", T,
     "triglycerides", "Triglycerides",   T,
     "hscrp",         "hs-CRP",          T
-  )
+  ) %>% mutate(order = 1:nrow(.))
 
   #' Create log transformed variable names to put in model formulas
   label_dfs <- map(list(macro_labels, blood_labels),
@@ -66,9 +66,9 @@ main <- function() {
   )
 
   linfct_diffs_base <- rbind(
-    '12 - 0_WLC' = c(0, 0, 1, 0, 0, 0),
+    '12_WLC' = c(0, 0, 1, 0, 0, 0),
     # '24 - 0_WLC' = c(0, 0, 0, 1, 0, 0),
-    '12 - 0_GCSWLI' = c(0, 0, 1, 0, 1, 0) #,
+    '12_GCSWLI' = c(0, 0, 1, 0, 1, 0) #,
     # '24 - 0_GCSWLI' = c(0, 0, 0, 1, 0, 1)
   )
 
@@ -107,14 +107,21 @@ main <- function() {
       )
   })
 
+
   results_dfs <- map(ests_dfs, function(ests_df) {
     ests_df %>%
       mutate(
         present = glht$model@frame %>%
+          mutate_at(vars(week, group), funs(as.character)) %>%
           group_by(week, group) %>%
-          summarise_at(vars(1), funs(count_present = sum(!is.na(.)))) %>%
-          ungroup() %>% list()
-        )
+          summarise_at(vars(1), funs(
+            count_present = sum(!is.na(.)),
+            SD = ifelse(log_trans, exp(.) %>% sd(), sd(.))
+          )) %>%
+          ungroup() %>%
+          mutate(comparison = comparison,
+                 label = label) %>% list()
+      )
   })
 
 
