@@ -5,91 +5,52 @@ date: "`r format(Sys.time(), '%B %e %Y')`"
 output: html_document
 knit: (function(inputFile, encoding) {
   rmarkdown::render(inputFile, encoding = encoding, output_dir = "../results") })
-editor_options: 
-  chunk_output_type: console
 ---
 
 ```{r setup, echo = F, warning = F, message = F}
 rm(list = ls())
 knitr::opts_chunk$set(
-  cache = T,
-  cache.path = "../cache/eff/",
-  autodep = T,
   echo = F,
   warning = F,
   message = F,
   root.dir = '..'
 )
 knitr::opts_knit$set(root.dir = '..')
-pacman::p_load(Hmisc, lme4, multcomp, tidyverse, broom, Gmisc)
+pacman::p_load(tidyverse, htmlTable)
 select <- dplyr::select
 ```
 
-```{r load cleaned data}
-animo <- read_rds("./data-processed/animo-full.rds") %>% 
-  # subset to weeks of interest, filter those who weren't randomized
-  filter(week %in% c(0, 12, 24), !is.na(group)) %>%
-  # change week and group to factors, label groups
-  mutate(week = factor(week))
+```{r load table data}
+tabs <- read_rds("./results/efficacy-tables-data.rds")
 ```
 
-```{r table functions}
-source('R/table-functions.R')
+```{r}
+html_table_base <- function(tab, ...) {
+  column_labels <- c("Baseline", "Week 12", "Week 24",
+                     "Week 12 - Baseline",
+                     "Baseline", "Week 12<sup>b</sup>")
+  column_groups <- c("Mean<sup>a</sup> (95% CI)",
+                     "Mean change from baseline (95% CI), p-value",
+                     "Mean differences between groups (95% CI), p-value")
+
+  htmlTable(
+    tab %>% select(-label, -group) %>% as.matrix(),
+    cgroup = column_groups,
+    n.cgroup = c(3, 1, 2),
+    rnames = tab$group,
+    rgroup = tab$label %>% unique(),
+    n.rgroup =  count(group_by(tab, label))$n,
+    header = column_labels,
+    ,
+    ...
+  )
+}
 ```
 
-```{r contrasts}
-linfct_means <- rbind(
-  '0_WLC' = c(1, 0, 0, 0, 0, 0),
-  '12_WLC' = c(1, 0, 1, 0, 0, 0),
-  # '24_WLC' = c(1, 0, 0, 1, 0, 0),
-  '0_GCSWLI' = c(1, 1, 0, 0, 0, 0),
-  '12_GCSWLI' = c(1, 1, 1, 0, 1, 0),
-  '24_GCSWLI' = c(1, 1, 0, 1, 0, 1)
-)
-
-linfct_diffs_base <- rbind(
-  '12 - 0_WLC' = c(0, 0, 1, 0, 0, 0),
-  # '24 - 0_WLC' = c(0, 0, 0, 1, 0, 0),
-  '12 - 0_GCSWLI' = c(0, 0, 1, 0, 1, 0) #,
-  # '24 - 0_GCSWLI' = c(0, 0, 0, 1, 0, 1)
-)
-
-linfct_diffs_grps <- rbind(
-  # GCSWLI - WLC
-  # "GCSWLI" after underscore in name to print on the GCSWLI line in the table
-  '0_GCSWLI' = c(0, 1, 0, 0, 0, 0),
-  '12_GCSWLI' = c(0, 0, 0, 0, 1, 0) #,
-  # '24_GCSWLI - WLC' = c(0, 1, 0, 0, 0, 1)
-)
-
-linfct_list <- list(linfct_means, linfct_diffs_base, linfct_diffs_grps)
-```
-
-```{r macro measures variables and labels}
-macro_labels <- tibble(
-  weight = "Weight, kg",
-  `log(weight)` = "Percent weight change",
-  waist = "Waist circumference, cm",
-  pct_fat = "Percent body fat",
-  ltpa = "LTPA<sup>d</sup>, minutes/week",
-  `log(kcals_per_day)` = "Average caloric intake<sup>e</sup>, kcal/day"
-)
-```
-
-```{r macro models}
-macro_results <- run_all(macro_labels, animo, linfct_list)
-```
 
 ```{r macro mean table}
-make_table(
-  macro_results,
-  macro_labels,
-  df = animo,
-  cgroup = c(
-    "Mean<sup>a</sup> (SD)",
-    "Mean change from baseline (95% CI), p-value",
-    "Mean differences between groups (95% CI), p-value"
-  ),
+html_table_base(
+  tabs$macro,
   caption = "Table XX: Estimates and 95% confidence intervals for mean weight, body composition, physical activity, and daily caloric intake, as well as changes in these mean measures from baseline, and mean differences between groups.",
   tfoot = paste0(
     "<sup>a</sup>Means were estimated by contrasts in each model\n",
@@ -97,48 +58,19 @@ make_table(
     "<sup>c</sup>The number of observations available for some outcomes were one below or above the values given\n",
     "<sup>d</sup>Lesiure time physical activity.\n",
     "<sup>e</sup>Differences in caloric intake are percent differences, and (for the last column) percent difference in ratio of mean week 12 to mean baseline measurements"
-  )
-)
+  ))
 ```
 
-
-```{r blood measures variables and labels}
-blood_labels <- tibble(
-  hba1c = "HbA1c",
-  alt = "ALT",
-  ast = "AST",
-  cholesterol = "Cholesterol",
-  hdl = "HDL Cholesterol",
-  ldl = "LDL Cholesterol",
-  triglycerides = "Triglycerides",
-  hscrp = "hs-CRP"
-)
-
-# log transform variables -------------------------------------------------
-
-blood_labels <- blood_labels %>%
-  rename_all(funs(paste0("log(", ., ")")))
-```
-
-```{r blood models}
-blood_results <- run_all(blood_labels, animo, linfct_list)
-```
 
 ```{r cardiometabolic table}
-make_table(
-  blood_results,
-  blood_labels,
-  df = animo,
-  cgroup = c(
-    "Mean<sup>a</sup> (SD)",
-    "Percent change from baseline (95% CI), p-value",
-    "Percent differences between groups (95% CI), p-value"
-  ),
+html_table_base(
+  tabs$blood,
   caption = "Table XX: Estimates and 95% confidence intervals for mean cardiometabolic measures, changes in mean measures from baseline, and mean differences between groups. Units for means and SDs are mg/dL, with the exception of HbA1c, which has units of DCCT %.",
   tfoot = paste0(
-    "<sup>a</sup>Geometric means, estimated by contrasts in each model\n",
-    "<sup>b</sup>Percent difference in the ratio of mean week 12 to mean baseline measurements\n<sup>c</sup>The number of observations available for some outcomes were one below or above the values given"
-  )
+      "<sup>a</sup>Geometric means, estimated by contrasts in each model\n",
+      "<sup>b</sup>Percent difference in the ratio of mean week 12 to mean baseline measurements\n",
+      "<sup>c</sup>The number of observations available for some outcomes were one below or above the values given\n"
+    )
 )
 ```
 

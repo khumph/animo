@@ -71,8 +71,14 @@ $(DESCR_DOC) : $(DESCR_SRC) $(RENDER_SRC) $(FULL_DATA)
 .PHONY : eff
 eff : $(EFF_DOC)
 
-$(EFF_DOC) : $(EFF_SRC) $(RENDER_SRC) $(EFF_FUNCS_SRC) $(FULL_DATA)
+$(EFF_RAW_RESULTS) : $(EFF_MODEL_SRC) $(FULL_DATA)
 	@mkdir -p $(RESULTS_DIR)
+	Rscript $^ $@
+
+$(EFF_RESULTS) : $(EFF_FORMAT_SRC) $(EFF_RAW_RESULTS)
+	Rscript $^ $@
+
+$(EFF_DOC) : $(EFF_SRC) $(RENDER_SRC) $(EFF_RESULTS)
 	$(RENDER_EXE) $< $@
 
 
