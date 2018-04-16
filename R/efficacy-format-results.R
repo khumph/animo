@@ -9,6 +9,20 @@ main <- function() {
 
   results_dfs <- read_rds(input_file)
 
+
+  present_dfs <- map(results_dfs, function(results_df) {
+    results_df %>%
+      filter(comparison == "means") %>%
+      select(present) %>%
+      flatten_df() %>%
+      filter(!(group == "WLC" & week == 24)) %>%
+      group_by(group, week) %>%
+      summarise(med_obs = median(count_present),
+                max(count_present),
+                min(count_present))
+  })
+
+
   #' format estimates and confidence intervals for pretty printing on table
   formatted_results_dfs <- map(results_dfs, function(results_df) {
     results_df %>%
@@ -42,14 +56,25 @@ main <- function() {
   #' Put formatted estimates together
   output_dfs <- map(formatted_results_dfs, function(results_df) {
     comparison_labels <- results_df$comparison %>% unique()
-    map(comparison_labels, ~ results_df$output %>%
-          reduce(bind_rows) %>% filter(comparison == .x)) %>%
+    map(comparison_labels, ~ results_df %>% select(output) %>% flatten_df() %>%
+          filter(comparison == .x)) %>%
       set_names(comparison_labels)
   })
 
 
+  present_tabs <- map(present_dfs, function(present_df) {
+    present_df %>%
+      mutate(label = "Number of observations<sup>c</sup> (% of observations at baseline)",
+             obs = round(med_obs),
+             obs = paste0(obs, " (", ((obs / 25) * 100), ")")) %>%
+      select(label, group, week, obs) %>%
+      spread(week, obs) %>% arrange(desc(group)) %>%
+      set_names(c("label", "group", "mean_base", "mean_w12", "mean_w24"))
+  })
+
+
   #' combine and format data for each table
-  tabs <- map(output_dfs, function(output_df_list) {
+  tabs <- map2(output_dfs, present_tabs, function(output_df_list, present_tab) {
     map(output_df_list, function(output_df) {
       output_df %>%
         mutate(
@@ -71,7 +96,8 @@ main <- function() {
       reduce(full_join, by = c("label", "group")) %>%
       ungroup() %>%
       set_names(c("label", "group", "mean_base", "mean_w12", "mean_w24",
-                  "diff_w12_base", "diff_grps_base", "diff_grps_w12"))
+                  "diff_w12_base", "diff_grps_base", "diff_grps_w12")) %>%
+      bind_rows(present_tab)
   })
 
   write_rds(tabs, path = output_file)

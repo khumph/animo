@@ -96,7 +96,7 @@ main <- function() {
 
 
   #' Get estimates and confidence intervals
-  results_dfs <- map(glhts_dfs, function(glhts_df) {
+  ests_dfs <- map(glhts_dfs, function(glhts_df) {
     glhts_df %>%
       mutate(
         output = full_join(
@@ -106,6 +106,17 @@ main <- function() {
         ) %>% list()
       )
   })
+
+  results_dfs <- map(ests_dfs, function(ests_df) {
+    ests_df %>%
+      mutate(
+        present = glht$model@frame %>%
+          group_by(week, group) %>%
+          summarise_at(vars(1), funs(count_present = sum(!is.na(.)))) %>%
+          ungroup() %>% list()
+        )
+  })
+
 
   write_rds(results_dfs, path = output_file)
 }
