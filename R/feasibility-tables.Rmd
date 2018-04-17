@@ -3,6 +3,8 @@ title: "ANIMO feasibility results"
 author: "Kyle Humphrey"
 date: "`r format(Sys.time(), '%B %e %Y')`"
 output: html_document
+params: 
+  input_data: "default"
 ---
 
 ```{r setup, echo = F, message = F, warning = F}
@@ -21,8 +23,8 @@ pacman::p_load(tidyverse, Gmisc, glue)
 ```
 
 ```{r load data}
-animo <- read_rds("./data-processed/animo-full.rds")
-screen <- read_csv("./data-raw/screen.csv",
+animo <- read_rds(params$input_data[1])
+screen <- read_csv(params$input_data[2],
                    col_types = cols(.default = col_character())) %>%
   select(eligible_esf)
 ```

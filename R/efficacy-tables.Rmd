@@ -3,12 +3,11 @@ title: "ANIMO efficacy outcome tables"
 author: "Kyle Humphrey"
 date: "`r format(Sys.time(), '%B %e %Y')`"
 output: html_document
-knit: (function(inputFile, encoding) {
-  rmarkdown::render(inputFile, encoding = encoding, output_dir = "../results") })
+params: 
+  input_data: "default"
 ---
 
 ```{r setup, echo = F, warning = F, message = F}
-rm(list = ls())
 knitr::opts_chunk$set(
   echo = F,
   warning = F,
@@ -21,7 +20,7 @@ select <- dplyr::select
 ```
 
 ```{r load table data}
-tabs <- read_rds("./results/efficacy-tables-data.rds")
+tabs <- read_rds(params$input_data)
 ```
 
 ```{r}

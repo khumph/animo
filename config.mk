@@ -8,11 +8,9 @@ RESULTS_DIR=results
 CACHE_DIR=cache
 
 RAND_SRC=$(SRC_DIR)/randomize-animo.R
-RAND_EXE=Rscript $(RAND_SRC)
 RAND_CSV=$(METHODS_DIR)/randomization-list.csv
 
 RENDER_SRC=$(SRC_DIR)/render.R
-RENDER_EXE=Rscript $(RENDER_SRC)
 
 SAP_SRC=$(WRITEUP_DIR)/sap.Rmd
 SAP_DOC= $(METHODS_DIR)/sap.docx
@@ -25,6 +23,7 @@ TOKEN_FILES=$(wildcard $(TOKEN_DIR)/*.token)
 RAW_CSVS=$(RAW_DIR)/animo.csv $(RAW_DIR)/blood.csv $(RAW_DIR)/dxa.csv
 CLEAN_RDSS=$(patsubst $(RAW_DIR)/%.csv, $(CLEAN_DIR)/%.rds, $(RAW_CSVS)) \
   $(CLEAN_DIR)/food.rds
+SCREEN_CSV=$(RAW_DIR)/screen.csv
 
 JOIN_SRC=$(SRC_DIR)/join-data.R
 FULL_DATA=$(CLEAN_DIR)/animo-full.rds
@@ -43,7 +42,7 @@ FEAS_SRC=$(SRC_DIR)/feasibility-tables.Rmd
 FEAS_DOC=$(RESULTS_DIR)/feasibility-tables.html
 
 EFF_MODEL_SRC=$(SRC_DIR)/efficacy-models.R
-EFF_RAW_RESULTS=$(RESULTS_DIR)/efficacy-tables-data-unformatted.rds
+EFF_RAW_RDS=$(RESULTS_DIR)/efficacy-tables-data-unformatted.rds
 
 EFF_FORMAT_SRC=$(SRC_DIR)/efficacy-format-results.R
-EFF_RESULTS=$(RESULTS_DIR)/efficacy-tables-data.rds
+EFF_RDS=$(RESULTS_DIR)/efficacy-tables-data.rds
