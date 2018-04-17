@@ -28,17 +28,17 @@ SCREEN_CSV=$(RAW_DIR)/screen.csv
 JOIN_SRC=$(SRC_DIR)/join-data.R
 FULL_DATA=$(CLEAN_DIR)/animo-full.rds
 
-DESCR_SRC=$(SRC_DIR)/baseline-table.Rmd
+DESCR_SRC=$(WRITEUP_DIR)/baseline-table.Rmd
 DESCR_DOC=$(RESULTS_DIR)/baseline-table.html
 
-EFF_SRC=$(SRC_DIR)/efficacy-tables.Rmd
+EFF_SRC=$(WRITEUP_DIR)/efficacy-tables.Rmd
 EFF_FUNCS_SRC=$(SRC_DIR)/table-functions.R
 EFF_DOC=$(RESULTS_DIR)/efficacy-tables.html
 
 WILCOX_SRC=$(SRC_DIR)/wilcox-ltpa.R
 WILCOX_LTPA=$(RESULTS_DIR)/wilcox-ltpa.Rdata
 
-FEAS_SRC=$(SRC_DIR)/feasibility-tables.Rmd
+FEAS_SRC=$(WRITEUP_DIR)/feasibility-tables.Rmd
 FEAS_DOC=$(RESULTS_DIR)/feasibility-tables.html
 
 EFF_MODEL_SRC=$(SRC_DIR)/efficacy-models.R
