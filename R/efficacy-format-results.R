@@ -36,7 +36,8 @@ main <- function() {
       mutate(p.value = case_when(p.value < 0.01 ~ "p < 0.01",
                                  T ~ sprintf("p = %#.2g", p.value)),
              SD = signif(SD, 3) %>%
-               formatC(digits = 3, format = "fg", flag = "#")) %>%
+               formatC(digits = 3, format = "fg", flag = "#") %>%
+               str_remove("\\.$")) %>%
       mutate_at(vars(estimate, conf.low, conf.high), funs(
         case_when(
           comparison != "means" & log_trans ~
