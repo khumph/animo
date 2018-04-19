@@ -10,9 +10,9 @@ all : sap randomize pull process descr feas eff wilcox
 .PHONY : sap
 sap : $(SAP_DOC)
 
-$(SAP_DOC) : $(SAP_SRC) $(RENDER_SRC)
+$(SAP_DOC) : $(RENDER_SRC) $(SAP_SRC)
 	@mkdir -p $(METHODS_DIR)
-	$(RENDER_EXE) $< $(SAP_DOC)
+	Rscript $^ $@
 
 
 ## randomize   : Generate randomization list.
@@ -21,7 +21,7 @@ randomize : $(RAND_CSV)
 
 $(RAND_CSV) : $(RAND_SRC)
 	@mkdir -p $(METHODS_DIR)
-	$(RAND_EXE) 9 50 $@
+	Rscript $< 9 50 $@
 
 
 ## pull        : Get raw data (from REDCap, and/or convert from xlsx)
@@ -53,33 +53,33 @@ $(FULL_DATA) : $(JOIN_SRC) $(CLEAN_RDSS)
 .PHONY : feas
 feas : $(FEAS_DOC)
 
-$(FEAS_DOC) : $(FEAS_SRC) $(RENDER_SRC) $(FULL_DATA)
+$(FEAS_DOC) : $(RENDER_SRC) $(FEAS_SRC) $(FULL_DATA) $(SCREEN_CSV)
 	@mkdir -p $(RESULTS_DIR)
-	$(RENDER_EXE) $< $@
+	Rscript  $^ $@
 
 
 ## descr       : Generate participant characteristics table.
 .PHONY : descr
 descr : $(DESCR_DOC)
 
-$(DESCR_DOC) : $(DESCR_SRC) $(RENDER_SRC) $(FULL_DATA)
+$(DESCR_DOC) : $(RENDER_SRC) $(DESCR_SRC) $(FULL_DATA)
 	@mkdir -p $(RESULTS_DIR)
-	$(RENDER_EXE) $< $@
+	Rscript $^ $@
 
 
 ## eff         : Generate efficacy outcome tables.
 .PHONY : eff
 eff : $(EFF_DOC)
 
-$(EFF_RAW_RESULTS) : $(EFF_MODEL_SRC) $(FULL_DATA)
+$(EFF_RAW_RDS) : $(EFF_MODEL_SRC) $(FULL_DATA)
 	@mkdir -p $(RESULTS_DIR)
 	Rscript $^ $@
 
-$(EFF_RESULTS) : $(EFF_FORMAT_SRC) $(EFF_RAW_RESULTS)
+$(EFF_RDS) : $(EFF_FORMAT_SRC) $(EFF_RAW_RDS)
 	Rscript $^ $@
 
-$(EFF_DOC) : $(EFF_SRC) $(RENDER_SRC) $(EFF_RESULTS)
-	$(RENDER_EXE) $< $@
+$(EFF_DOC) : $(RENDER_SRC) $(EFF_SRC) $(EFF_RDS)
+	Rscript $^ $@
 
 
 ## wilcox      : Run Wilcoxon tests on LTPA data.

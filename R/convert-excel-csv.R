@@ -1,4 +1,4 @@
-library(readxl)
+pacman::p_load(readxl)
 
 main <- function() {
   args <- commandArgs(trailingOnly = T)

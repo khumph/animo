@@ -3,6 +3,8 @@ title: "ANIMO feasibility results"
 author: "Kyle Humphrey"
 date: "`r format(Sys.time(), '%B %e %Y')`"
 output: html_document
+params: 
+  input_data: "default"
 ---
 
 ```{r setup, echo = F, message = F, warning = F}
@@ -21,8 +23,8 @@ pacman::p_load(tidyverse, Gmisc, glue)
 ```
 
 ```{r load data}
-animo <- read_rds("./data-processed/animo-full.rds")
-screen <- read_csv("./data-raw/screen.csv",
+animo <- read_rds(params$input_data[1])
+screen <- read_csv(params$input_data[2],
                    col_types = cols(.default = col_character())) %>%
   select(eligible_esf)
 ```
@@ -73,49 +75,48 @@ A participant was classified as retained in the study at week 12 or 24 if a weig
 
 ```{r satisfaction table setup}
 satisfaction_labs <-
-  tibble(
-    name = c(
+  tribble(
+    ~ name,
+    ~ label,
     'satisfied_tss',
+    "How satisfied are you overall with the weight management program?",
     'rec_tss',
+    "Would you recommend the weight management program you received to others?",
     'progress_why_tss',
+    "Given the effort you put into following the weight management program, how satisfied are you with your overall progress over the past 12 weeks?",
     'chng_weight_tss',
+    "Changing your weight",
     'chng_diet_tss',
-    'chng_pa_tss'
-  ), 
-  label = c( 
-   "How satisfied are you overall with the weight management program?",
-   "Would you recommend the weight management program you received to others?",
-   paste("Given the effort you put into following the weight management",
-         "program, how satisfied are you with your overall progress over the",
-         "past 12 weeks?"),
-   "Changing your weight",
-   "Changing your dietary habits",
-   "Changing your physical activity habits"
-    )
+    "Changing your dietary habits",
+    'chng_pa_tss',
+    "Changing your physical activity habits"
   )
 
-satisfaction_labs$label[4:6] <- paste( 
-  paste("Given the effort you put into following the weight management",
-        "program for the past 12 weeks, how satisfied are you overall with your",
-        "progress on..."),
-  satisfaction_labs$label[4:6]
-)
+satisfaction_labs <- satisfaction_labs %>% mutate(label = ifelse(
+  name %in% c('chng_weight_tss', 'chng_diet_tss', 'chng_pa_tss'),
+  paste(
+    "Given the effort you put into following the weight management",
+    "program for the past 12 weeks, how satisfied are you overall with your",
+    "progress on...",
+    label
+  ),
+  label
+))
 ```
 
 ```{r make satisfaction tables, results="asis"}
-satisfaction_table <- function(df) {
+weeks <- c(12, 24)
+descrip_stats <- map(weeks, function(wk) {
+  df <- filter(animo, week == wk)
   map(
     satisfaction_labs$name,
-    ~ getDescriptionStatsBy(df[[.x]], df$group,
-                            continuous_fn = describeMedian,
-                            add_total_col = T)
-  )
-}
-
-weeks <- c(12, 24)
-descrip_stats <- map(weeks, ~ filter(animo, week == .x)) %>%
-  map(satisfaction_table) %>%
-  set_names(paste0("week", weeks))
+    ~ getDescriptionStatsBy(
+      df[[.x]],
+      df$group,
+      continuous_fn = describeMedian,
+      add_total_col = T
+    ))
+}) %>% set_names(paste0("week", weeks))
 
 n.rgroups <- map(descrip_stats, ~ map_int(.x, nrow))
 

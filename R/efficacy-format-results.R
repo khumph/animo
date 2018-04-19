@@ -29,26 +29,58 @@ main <- function() {
       ) %>% select(output) %>% flatten_df()
   })
 
+
+  results_trans_dfs <- results_combined_dfs %>% map(function(results_df) {
+    # back transform log transformed variables
+    results_df %>% mutate_at(vars(estimate, conf.low, conf.high),
+              funs(case_when(log_trans & comparison == "means" ~ exp(.),
+                             log_trans ~ (exp(.) - 1) * 100,
+                             T ~ .))) %>%
+      ungroup() %>%
+      # calculate absolute difference from baseline for log transformed vars
+      group_by(group, name) %>%
+      mutate(
+        abs_diff_base = case_when(
+          comparison == "means" & log_trans ~ estimate - estimate[1],
+          T ~ NA_real_
+        )) %>% group_by(week, name, group) %>%  mutate(
+        abs_diff_base = case_when(comparison == "diffs_base" & log_trans ~ abs_diff_base[1],
+        T ~ abs_diff_base
+      )) %>% ungroup() %>%
+      rowwise() %>%
+      mutate(estimate_flip = -estimate,
+             conf.low_flip = -conf.high,
+             conf.high_flip = -conf.low,
+             abs_diff_base_flip = -abs_diff_base) %>%
+      ungroup()
+  })
+
   #' format estimates and confidence intervals for pretty printing on table
-  output_dfs <- map(results_combined_dfs, function(results_df) {
+  output_dfs <- map(results_trans_dfs, function(results_df) {
     results_df %>%
       rowwise() %>%
       mutate(p.value = case_when(p.value < 0.01 ~ "p < 0.01",
                                  T ~ sprintf("p = %#.2g", p.value)),
              SD = signif(SD, 3) %>%
-               formatC(digits = 3, format = "fg", flag = "#")) %>%
-      mutate_at(vars(estimate, conf.low, conf.high), funs(
-        case_when(
-          comparison != "means" & log_trans ~
-            sprintf("%#.1f", (exp(.) - 1) * 100),
-          name == "pct_fat" ~ sprintf("%#.1f", .),
-          comparison == "means" ~
-            ifelse(log_trans, exp(.), .) %>% signif(3) %>%
-            formatC(digits = 3, format = "fg", flag = "#"),
-          T ~ . %>% signif(2) %>%
-            formatC(digits = 2, format = "fg", flag = "#")
-        ) %>% str_remove("\\.$")
-      ))
+               formatC(digits = 3, format = "fg", flag = "#") %>%
+               str_remove("\\.$")) %>%
+      mutate_at(vars(starts_with("abs_diff")), funs(
+        ifelse(!is.na(.), signif(., 2) %>%
+                 formatC(digits = 2, format = "fg", flag = "#") %>%
+                 str_remove("\\.$"), "")
+      )) %>%
+      mutate_at(vars(estimate, estimate_flip, conf.low, conf.low_flip,
+                     conf.high, conf.high_flip), funs(
+                       case_when(
+                         (comparison != "means" & log_trans) | name == "pct_fat" ~
+                           sprintf("%#.1f", .),
+                         comparison == "means" ~ . %>% signif(3) %>%
+                           formatC(digits = 3, format = "fg", flag = "#"),
+                         T ~ . %>% signif(2) %>%
+                           formatC(digits = 2, format = "fg", flag = "#")
+                       ) %>% str_remove("\\.$")
+                     )) %>%
+      ungroup()
   })
 
 
@@ -56,20 +88,22 @@ main <- function() {
   present_tabs <- map(output_dfs, function(output_df) {
     output_df %>%
       filter(comparison == "means") %>%
-      ungroup() %>% group_by(group, week) %>%
+      group_by(group, week) %>%
       summarise(med_obs = median(count_present)) %>%
       mutate(label = "Number of observations<sup>c</sup> (% of observations at baseline)",
              obs = round(med_obs),
              obs = paste0(obs, " (", ((obs / 25) * 100), ")")) %>%
       select(label, group, week, obs) %>%
       spread(week, obs) %>% arrange(group) %>%
-      set_names(c("label", "group", "mean_base", "mean_w12", "mean_w24"))
+      set_names(c("label", "group", "mean_base", "mean_w12", "mean_w24")) %>%
+      ungroup()
   })
 
 
   #' Combine and format data for each table
   tabs <- map2(output_dfs, present_tabs, function(output_df, present_tab) {
     output_df <- output_df %>%
+      rowwise() %>%
       mutate(estimate = case_when(
         comparison != "means" ~
           paste0(estimate, " (", conf.low, ", ", conf.high, "), ", p.value),
@@ -81,21 +115,21 @@ main <- function() {
       ungroup()
 
     comps <- output_df$comparison %>% unique()
-    map(comps, function(comp){
+    map(comps, function(comp) {
       output_df %>%
         filter(comparison == comp) %>%
         select(label, group, order, week, estimate) %>%
         spread(week, estimate) %>%
         arrange(order) %>% select(-order)
-      }) %>%
+    }) %>%
       reduce(full_join, by = c("label", "group")) %>%
       ungroup() %>%
       set_names(c("label", "group", "mean_base", "mean_w12", "mean_w24",
                   "diff_w12_base", "diff_grps_base", "diff_grps_w12")) %>%
       bind_rows(present_tab)
-    })
+  })
 
-  write_rds(tabs, path = output_file)
+  write_rds(list(tabs = tabs, output_dfs = output_dfs),  path = output_file)
 
 }
 

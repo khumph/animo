@@ -3,48 +3,48 @@ This repository contains the code and statistically-related write-ups for the AN
 The main results of this trial are published in two papers:
 
 #### Protocol and recruitment methods (feasibility outcomes) paper
-D.O. Garcia, L.A. Valdez, M.L. Bell, K. Humphrey, M. Hingle, M. McEwen, & S.P. Hooker (2018). A Gender- and Culturally-Sensitive Weight Loss Intervention for Hispanic Males: The ANIMO Randomized Controlled Trial Study Protocol and Recruitment Methods. Contemporary Clinical Trials Communications. In press.
+D.O. Garcia, L.A. Valdez, M.L. Bell, K. Humphrey, M. Hingle, M. McEwen, & S.P. Hooker (2018). A Gender- and Culturally-Sensitive Weight Loss Intervention for Hispanic Males: The ANIMO Randomized Controlled Trial Study Protocol and Recruitment Methods. Contemporary Clinical Trials Communications. https://doi.org/10.1016/j.conctc.2018.01.010. In press.
 
 #### Efficacy outcomes paper
 D.O. Garcia, L.A. Valdez, B. Aceves, D. Campas, J. Loya, K. Humphrey, M.L. Bell, M. Hingle, M. McEwen, & S.P. Hooker (2018). A Gender- and Culturally-Sensitive Weight Loss Intervention for Hispanic Males: The ANIMO Randomized Controlled Trial Study Efficacy Outcomes. In progress.
 
-#### Abstract
-> Background: Hispanic males have the highest rates of overweight and obesity compared to males of other racial/ethnic groups. While weight loss can significantly reduce obesity related health risks, Hispanic males are grossly underrepresented in weight loss research. Our work addresses a critical gap by informing how tailored intervention strategies improve weight management in this health disparate population. <br>
-> Purpose: This pilot randomized controlled study compared a 12-week gender- and culturally-sensitive weight loss intervention (GCSWLI) to a waist-list control (WLC) in sedentary, overweight/obese Hispanic males. <br>
-> Methods: Fifty Hispanic males (age: 43 ± 11 years; BMI: 34 ± 5 kg/m²; 58% Spanish monolingual) were randomized to one of two groups:  GCSWLI (n=25) or WLC (n=25). GCSWLI participants attended weekly in-person individual sessions guided by a trained bilingual Hispanic male lifestyle coach, were prescribed a daily reduced calorie goal with a specific focus on reducing/modifying the types of food and liquids consumed (e.g., alcohol/sugar sweetened beverages), and 225 minutes of moderate-intensity physical activity (PA) per week. Additional GCSWLI features included a free gym membership and optional spouse/significant other attendance at intervention sessions. The WLC were asked to maintain their usual dietary intake and PA habits during the 12 weeks. GCSWLI participants continued with 12 weeks of follow-up including bi-weekly phone calls. Estimates of weight lost were obtained using a linear mixed effects model with categorical time and random intercepts.
-> Results: Between June-August 2016, 143 men expressed interest in participation; 35% (n=50) completed baseline measures and were randomized. Forty-three of 50 participants completed 12-week assessments, an overall attrition rate of 14% (GCSWLI: n=5, 20% vs. WLC: n=2, 8%). At week 12, using intention-to-treat, the mean weight loss in the GCSWLI was -6.3 kg (95% CI [-8.4, -4.1]) compared to -0.8 kg (95% CI [-2.8, 1.2]) for WLC (difference = -5.5 kg, 95% CI [-7.6, -3.4], p < 0.001). At week 24, weight loss in the GCSWLI was maintained (-6.4 kg, 95% CI [-8.6, -4.3]). <br>
-> Conclusion: The GCSWLI appears to be a feasible strategy to engage Hispanic males in weight loss/management. Our pilot study indicates preliminary evidence of efficacy, though due to the small sample size, confirmation of these findings are needed in a larger study. <br>
-
 ## Reproducing the analyses
-#### Dependencies
-R and the R packages listed below
-GNU Make
+### Dependencies
+The project was tested on macOS 10.13.4 High Sierra using the following:
+- [R](https://www.r-project.org/) version 3.4.4
+- The R packages [pacman](http://trinker.github.io/pacman_dev/), [tidyverse](https://www.tidyverse.org/), [lme4](https://github.com/lme4/lme4), [Gmisc](https://github.com/gforge/Gmisc), [htmlTable](https://github.com/gforge/htmlTable), and [rmarkdown](https://rmarkdown.rstudio.com/) (all other required packages should be depenencies of those listed–and thus installed automatically)
+- [GNU Make](https://www.gnu.org/software/make/) 3.81 - standard on macOS and Linux
+- [GNU Bash](https://www.gnu.org/software/bash/) 3.2.57(1) - default shell in terminal on macOS and many linux distributions
 
-You can install all of the required packages by running the following into an R console:
+You can ensure you have the required R packages by running the following in an R console:
 ```r
-pkgs <- c("rmarkdown", "tidyverse")
-install.packages(pkgs)
+if (!suppressWarnings(require("pacman", quietly = TRUE))) {
+   install.packages("pacman", repo = "https://cran.rstudio.com")
+}
 ```
+The magic of the pacman R package will then install any required packages as they are needed.
 
-#### Obtaining the data
-##### From REDCap
-To download the data from REDCap, you will need an API token from the REDCap project. Create a file called `api-token.mk` in the main project directory (i.e., animo/), which contains only the following line:
+### Obtaining the data
+#### From REDCap (requires API tokens for each project)
+To download the data from REDCap, you will need an API token from the REDCap projects "ANIMO", "Screening forms -  ANIMO", and "ANIMO - blood test data". The Makefile expects these tokens to be in a directory called "tokens", so create a directory in the main project directory (i.e., animo/), called "tokens". In this directory, create plain text files with the file extension ".token" which contain only a single line with each token. For example, I created three files called "animo.token", "screen.token", and "blood.token", and I copied and pasted the corresponding token in each. The stem of what you name the token files (e.g., "animo") will become the stem of your data files (e.g., "animo.csv").
 
-```make
-API_TOKEN=<paste API token here>
-```
-
-#### (Re)making the analyses
-In a terminal, navigating to the directory where you downloaded the files and typing `make help` displays a short description of all of the options to `make`. In Bash (typically the default shell on Mac and Linux) this would look like:
-```
+### (Re)making the analyses
+In a terminal window/shell, navigating to the directory where you downloaded the files (by hitting the "Clone or download" button above) and typing `make help` displays a short description of all of the options to `make`. For example, this might look like:
+```bash
 cd ~/Downloads/animo
 make help
 ```
 
-For example, the randomization list can be generated by typing
-```
+To make the randomization list (for instance) type
+```bash
 make randomize
 ```
 when in the animo directory.
 
-The Makefile expects the raw data to be in a directory called raw-data. Running `make all` will produce a processed-data directory and a results directory for the results.
+The Makefile expects the raw data to be in a directory called data-raw (automatically created if you download the data from REDCap via the Make).
+
+Running `make all` (or simply `make`) will produce the following:
+
+1. A directory called "data-processed" with cleaned data files
+2. A directory called "results" with R files for the models, and the formatted results documents.
+3. A directory called "methods" with the radnomization list and formatted statstical analysis plan.

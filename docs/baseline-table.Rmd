@@ -3,6 +3,8 @@ title: "ANIMO baseline characteristics"
 author: "Kyle Humphrey"
 date: "Last updated on `r format(Sys.time(), '%B %e %Y')`"
 output: html_document
+params: 
+  input_data: "default"
 ---
 
 ```{r setup, echo=FALSE}
@@ -21,7 +23,7 @@ pacman::p_load(tidyverse, Gmisc)
 
 
 ```{r load data}
-base <- read_rds("data-processed/animo-full.rds") %>% 
+base <- read_rds(params$input_data) %>% 
   # filter to baseline and only those who were randomized
   filter(week == 0, !is.na(group))
 ```

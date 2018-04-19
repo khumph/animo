@@ -1,0 +1,102 @@
+---
+title: "ANIMO efficacy outcome tables"
+author: "Kyle Humphrey"
+date: "`r format(Sys.time(), '%B %e %Y')`"
+output: html_notebook
+params: 
+  input_data: "results/efficacy-tables-data.rds"
+---
+
+```{r setup, echo = F, warning = F, message = F}
+knitr::opts_chunk$set(
+  echo = F,
+  warning = F,
+  message = F,
+  root.dir = '..'
+)
+knitr::opts_knit$set(root.dir = '..')
+pacman::p_load(magrittr, tidyverse, htmlTable)
+```
+
+```{r load table data}
+dat <- read_rds(params$input_data)
+tabs <- dat$tabs
+output_dfs <- dat$output_dfs
+```
+
+```{r html table function def}
+html_table_base <- function(tab, ...) {
+  column_labels <- c("Baseline", "Week 12", "Week 24",
+                     "Week 12 - Baseline",
+                     "Baseline", "Week 12<sup>b</sup>")
+  column_groups <- c("Mean<sup>a</sup> (95% CI)",
+                     "Mean change from baseline (95% CI), p-value",
+                     "Mean differences between groups (95% CI), p-value")
+
+  htmlTable(
+    tab %>% select(-label, -group) %>% as.matrix(),
+    cgroup = column_groups,
+    n.cgroup = c(3, 1, 2),
+    rnames = tab$group,
+    rgroup = tab$label %>% unique(),
+    n.rgroup =  count(group_by(tab, label))$n,
+    header = column_labels,
+    ,
+    ...
+  )
+}
+```
+
+```{r}
+est <- function(x, grp, comp, after_est = "", flip_sign = F, before_est = "", wk = "12", x_grp = "macro") {
+  df <- output_dfs[[x_grp]] %>%
+    filter(name == x, group == grp, week == wk, comparison == comp)
+
+  if (flip_sign) {
+    df %$% str_glue("{abs_diff_base_flip}{before_est}{estimate_flip}{after_est} (95% CI ({conf.low_flip}, {conf.high_flip}), {p.value})")
+  } else {
+    df %$% str_glue("{abs_diff_base}{before_est}{estimate}{after_est} (95% CI ({conf.low}, {conf.high}), {p.value})")
+  }
+}
+```
+
+
+_Study retention, weight loss, physical activity, and dietary change_  
+Forty-three of 50 participants completed the main 12-week assessments, an overall attrition rate of 14% (GCSWLI: n = 5, 2 0% vs.  WLC: n = 2, 8%). As shown in table XX, mean weight loss in the GCSWLI group from baseline to week 12 was `r est("weight", "GCSWLI", "diffs_base", " kg", T)`  compared to `r est("weight", "WLC", "diffs_base", " kg", T)` for the WLC group over the same period, a `r est("weight", "GCSWLI", "diffs_grps", " kg", T)` greater decrease in the GCSWLI. 44% (n = 11) of GCSWLI participants achieved a 5% weight loss by week 12 compared to 4% (n = 1) in the WLC (p < 0.01). Mean waist circumference and mean percent body fat both decreased significantly from baseline to week 12 in the GCSWLI group: waist circumference decreased by `r est('waist', 'GCSWLI', 'diffs_base', ' cm', T)` and percent body fat decreased by `r est('pct_fat', 'GCSWLI', 'diffs_base', '%', T)`. These changes were significantly greater in the GCSWLI group than in the WLC group, where waist circumference decreased by `r est('waist', 'GCSWLI', 'diffs_grps', ' cm', T)` more in GCSWLI than in the WLC group, and body fat percentage decreased by `r est('pct_fat', 'GCSWLI', 'diffs_grps', '%', T)` more in GCSWLI than in the WLC group. Mean leisure time physical activity (LTPA) for GCSWLI participants increased by an average of `r est('ltpa', 'GCSWLI', 'diffs_base', ' minutes/week')` from baseline to week 12, an average increase `r est('ltpa', 'GCSWLI', 'diffs_grps', ' minutes/week')` greater than in the WLC group over the same period. The distribution of LTPA was right skewed with many participants reporting no activity, so a Wilcoxon rank sum test (comparing the change from baseline between groups) and Wilcoxon signed rank tests (comparing change from baseline within each group) were performed as a sensitivity analysis. The results of these tests agreed with results of the primary analysis described above. Mean daily caloric dietary intake in the GCSWLI group decreased by `r est('log(kcals_per_day)', 'GCSWLI', 'diffs_base', '%', T)` from baseline to week 12, a `r est('log(kcals_per_day)', 'GCSWLI', 'diffs_grps', '%', T)` greater decrease relative to the baseline in the GCSWLI than the WLC group. All mean changes from baseline to week 12 for the above outcomes were maintained through week 24 in the GCSWLI group.
+
+
+```{r macro mean table}
+html_table_base(
+  tabs$macro,
+  caption = "Table XX: Estimates and 95% confidence intervals for mean weight, body composition, physical activity, and daily caloric intake, as well as changes in these mean measures from baseline, and mean differences between groups.",
+  tfoot = paste0(
+    "<sup>a</sup>Means were estimated by contrasts in each model\n",
+    "<sup>b</sup>Difference in change from baseline between groups at week 12\n",
+    "<sup>c</sup>The number of observations available for some outcomes were one below or above the values given\n",
+    "<sup>d</sup>Lesiure time physical activity.\n",
+    "<sup>e</sup>Differences in caloric intake are percent differences, and (for the last column) percent difference in ratio of mean week 12 to mean baseline measurements"
+  ))
+```
+
+```{r}
+estb <- function(...) {
+  est(x_grp = "blood", ...)
+}
+```
+
+_Cardiometabolic measures_  
+As shown in table XX, HbA1c decreased by `r estb('log(hba1c)', 'GCSWLI', 'diffs_base', '% decrease', T, ' DCCT %, a ')` from baseline to week 12 in the GCSWLI group, a relative decrease from baseline `r estb('log(hba1c)', 'GCSWLI', 'diffs_grps', '% ', T)` greater than in the WLC. Serum alanine transferase (ALT) and serum aspartate aminotransferase (AST) decreased significantly in both groups from baseline to week 12. However, the mean decrease in ALT at week 12 relative to baseline was `r estb('log(alt)', 'GCSWLI', 'diffs_grps', '% greater', T)` in the GCSWLI group than WLC group. There were no significant mean changes in any type of serum cholesterol over the study period for either group. Though mean HDL cholesterol decreased at week 12 relative to baseline `r estb('log(hdl)', 'GCSWLI', 'diffs_grps', '% more', T)` in the GCSWLI group than in the WLC group, equalizing a baseline difference between the groups. Mean serum triglycerides decreased in the GCSWLI group by `r estb('log(triglycerides)', 'GCSWLI', 'diffs_base', '% decrease', T, ' mg/dL, a ')` from baseline to week 12, and the mean at week 12 relative to baseline was `r estb('log(triglycerides)', 'GCSWLI', 'diffs_grps', '% less', T)` than that in the WLC group. Serum high sensitivity C-reactive protein (hs-CRP) did not change significantly in the GCSWLI group, but did increase significantly in the WLC, with the week 12 mean being `r estb('log(hscrp)', 'WLC', 'diffs_base', '% greater', F, ' mg/dL greater, or ')` than baseline.
+
+
+```{r cardiometabolic table}
+html_table_base(
+  tabs$blood,
+  caption = "Table XX: Estimates and 95% confidence intervals for mean cardiometabolic measures, changes in mean measures from baseline, and mean differences between groups. Units for means and SDs are mg/dL, with the exception of HbA1c, which has units of DCCT %.",
+  tfoot = paste0(
+      "<sup>a</sup>Geometric means, estimated by contrasts in each model\n",
+      "<sup>b</sup>Percent difference in the ratio of mean week 12 to mean baseline measurements\n",
+      "<sup>c</sup>The number of observations available for some outcomes were one below or above the values given\n"
+    )
+)
+```
+
