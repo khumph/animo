@@ -1,3 +1,5 @@
+pacman::p_load(rmarkdown)
+
 #' Render an Rmd document
 #'
 #' Automatically determine output directory and output format based on a

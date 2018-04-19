@@ -1,4 +1,4 @@
-library(tidyverse)
+pacman::p_load(tidyverse)
 
 clean <- function(df) {
   df %>%
