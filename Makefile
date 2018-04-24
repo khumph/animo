@@ -31,6 +31,7 @@ pull : $(RAW_CSVS) $(RAW_DIR)/screen.csv
 $(RAW_DIR)/%.csv : $(TOKEN_DIR)/%.token $(PULL_SRC)
 	@mkdir -p $(RAW_DIR)
 	$(PULL_EXE) $< > $@
+	chmod 600 $@
 
 $(RAW_DIR)/%.csv : $(CONVERT_SRC) $(RAW_DIR)/%.xlsx
 	Rscript $^ $@
