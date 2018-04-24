@@ -14,25 +14,18 @@ pacman::p_load(rmarkdown)
 main <- function() {
   args <- commandArgs(trailingOnly = T)
   input_file <- args[1]
-  output_path <- tail(args, 1)
+  # output file is the last argument
+  output_file <- tail(args, 1)
+  # output directory is the second to last argument
+  output_dir <- head(tail(args, 2), 1)
   # input data are all command line arguments in between
-  input_data <- head(tail(args, -1), -1)
+  input_data <- head(tail(args, -1), -2)
 
 
   if (length(input_data) > 0) {
     input_data <- list(input_data = input_data)
   } else {
     input_data <- NULL
-  }
-
-  output_path_separated <- strsplit(output_path, "\\/")[[1]]
-
-  if (length(output_path_separated) > 1) {
-    output_file <- tail(output_path_separated, 1)
-    output_dir <- paste0(head(output_path_separated, -1), collapse = "/")
-  } else {
-    output_file <- output_path
-    output_dir <- NULL
   }
 
   output_extension <- tail(strsplit(output_file, "\\.")[[1]], 1)
