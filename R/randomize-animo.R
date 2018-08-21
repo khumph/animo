@@ -1,20 +1,22 @@
-pacman::p_load(tidyverse, blockrand)
+"Create and save block randomized randomization list
 
-#' Create and save block randomized randomization list
-#'
-#' Creates a random permuted block randomization list, blocks of size 2-4, two
-#' groups, with four strata defined by the combinations of diabetes status
-#' (yes/no) and bmi category (overweight/obese)
-#'
-#' Takes three command line arguments:
-#' the first: a seed (for reproducibility)
-#' the second: the total number of participants
-#' the thrid: a .csv filename to save the created list
-main <- function() {
-  args <- commandArgs(trailingOnly = TRUE)
-  seed <- as.numeric(args[1])
-  total_participants <- as.numeric(args[2])
-  filename <- args[3]
+Usage:
+  randomize-animo.R <seed> <length> <output>
+
+Arguments:
+  seed    Seed for (pseudo)random number generation (for reproducibility)
+  length  Total number of participants to randomize
+  output  Path to output .csv file
+
+Creates a random permuted block randomization list, blocks of size 2-4, two
+groups, with four strata defined by the combinations of diabetes status
+(yes/no) and bmi category (overweight/obese)
+" -> doc
+
+pacman::p_load(tidyverse, blockrand)
+opts <- docopt::docopt(doc)
+
+main <- function(seed, total_participants, output_filename) {
 
   set.seed(seed)
 
@@ -40,7 +42,7 @@ main <- function() {
     rand_list
   )
 
-  write.csv(rand_list, file = filename, row.names = F, quote = F)
+  write.csv(rand_list, file = output_filename, row.names = F, quote = F)
 }
 
-main()
+main(as.numeric(opts$seed), as.numeric(opts$length), opts$output)
