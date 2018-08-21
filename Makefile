@@ -56,7 +56,7 @@ feas : $(FEAS_DOC)
 
 $(FEAS_DOC) : $(RENDER_SRC) $(FEAS_SRC) $(FULL_DATA) $(SCREEN_CSV)
 	@mkdir -p $(RESULTS_DIR)
-	Rscript $^ $(@D) $(@F)
+	Rscript $(wordlist 1,2,$^) $(@D) $(@F) $(filter-out $(wordlist 1,2,$^),$^)
 
 
 ## descr       : Generate participant characteristics table.
@@ -65,7 +65,7 @@ descr : $(DESCR_DOC)
 
 $(DESCR_DOC) : $(RENDER_SRC) $(DESCR_SRC) $(FULL_DATA)
 	@mkdir -p $(RESULTS_DIR)
-	Rscript $^ $(@D) $(@F)
+	Rscript $(wordlist 1,2,$^) $(@D) $(@F) $(filter-out $(wordlist 1,2,$^),$^)
 
 
 ## eff         : Generate efficacy outcome tables.
@@ -80,7 +80,7 @@ $(EFF_RDS) : $(EFF_FORMAT_SRC) $(EFF_RAW_RDS)
 	Rscript $^ $@
 
 $(EFF_DOC) : $(RENDER_SRC) $(EFF_SRC) $(EFF_RDS)
-	Rscript $^ $(@D) $(@F)
+	Rscript $(wordlist 1,2,$^) $(@D) $(@F) $(filter-out $(wordlist 1,2,$^),$^)
 
 
 ## wilcox      : Run Wilcoxon tests on LTPA data.
