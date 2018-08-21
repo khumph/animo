@@ -1,4 +1,16 @@
+"Clean data from the main REDCap project
+
+Usage:
+  clean-animo.R <input> <output> [<dependencies>...]
+
+Arguments:
+  input         Path to .csv of file of raw data from REDCap
+  output        Path to write .rds file of cleaned data to
+  dependencies  Files with required function definitions
+" -> doc
+
 pacman::p_load(tidyverse)
+opts <- docopt::docopt(doc)
 
 
 #' Clean ANIMO data
@@ -48,14 +60,7 @@ clean <- function(df) {
 }
 
 
-main <- function() {
-  args <- commandArgs(trailingOnly = T)
-  # input file is the first command line argument
-  input_file <- args[1]
-  # output file is the last command line argument
-  output_file <- tail(args, 1)
-  # dependencies are all command line arguments in between first and last
-  dependencies <- tail(args, -1) %>% head(-1)
+main <- function(input_file, output_file, dependencies) {
 
   # import all functions from dependencies (all clean-animo-*.R files)
   walk(dependencies, source)
@@ -67,4 +72,4 @@ main <- function() {
 }
 
 
-main()
+main(opts$input, opts$output, opts$dependencies)

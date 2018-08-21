@@ -44,7 +44,7 @@ process : $(FULL_DATA)
 $(CLEAN_DIR)/%.rds : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%*.csv \
                      $(SRC_DIR)/clean-%*.R
 	@mkdir -p $(CLEAN_DIR)
-	Rscript $^ $@
+	Rscript $(wordlist 1,2,$^) $@ $(filter-out $(wordlist 1,2,$^),$^)
 
 $(FULL_DATA) : $(JOIN_SRC) $(CLEAN_RDSS)
 	Rscript $^ $@
