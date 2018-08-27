@@ -44,10 +44,10 @@ process : $(FULL_DATA)
 $(CLEAN_DIR)/%.rds : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%*.csv \
                      $(SRC_DIR)/clean-%*.R
 	@mkdir -p $(CLEAN_DIR)
-	Rscript $(wordlist 1,2,$^) $@ $(filter-out $(wordlist 1,2,$^),$^)
+	Rscript $^ -o $@
 
 $(FULL_DATA) : $(JOIN_SRC) $(CLEAN_RDSS)
-	Rscript $^ $@
+	Rscript $^ -o $@
 
 
 ## feas        : Generate feasibility results.
@@ -74,10 +74,10 @@ eff : $(EFF_DOC)
 
 $(EFF_RAW_RDS) : $(EFF_MODEL_SRC) $(FULL_DATA)
 	@mkdir -p $(RESULTS_DIR)
-	Rscript $^ $@
+	Rscript $^ -o $@
 
 $(EFF_RDS) : $(EFF_FORMAT_SRC) $(EFF_RAW_RDS)
-	Rscript $^ $@
+	Rscript $^ -o $@
 
 $(EFF_DOC) : $(RENDER_SRC) $(EFF_SRC) $(EFF_RDS)
 	Rscript $(wordlist 1,2,$^) $(@D) $(@F) $(filter-out $(wordlist 1,2,$^),$^)
@@ -89,7 +89,7 @@ wilcox : $(WILCOX_LTPA)
 
 $(WILCOX_LTPA) : $(WILCOX_SRC) $(FULL_DATA)
 	@mkdir -p $(RESULTS_DIR)
-	Rscript $^ $@
+	Rscript $^ -o $@
 
 
 ## remove      : Remove auto-generated files.
