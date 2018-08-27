@@ -1,14 +1,19 @@
-pacman::p_load(tidyverse)
+"Clean SW food frequency questionnaire data
 
-#' Clean food data
-#'
-#' Extracts the calories consumed per day from the food questionnaires, puts
-#' them in a format for easy combining with the rest of the data
-#'
-#' @param food_dfs_list list of the food data in chronological order
-#' (week 0, week 12, week 24)
-#'
-#' @return Combined data frame of calories consumed
+Usage:
+  clean-food.R <inputs>... (-o <out> | --output <out>)
+  clean-food.R -h | --help
+
+Arguments:
+  -h --help                Show this screen
+  inputs                    .csv files of raw SW food frequency questionnaire data
+  -o <out> --output <out>  .rds of cleaned data
+" -> doc
+
+pacman::p_load(tidyverse)
+opts <- docopt::docopt(doc)
+
+
 clean <- function(food_dfs_list) {
   map2_df(
     food_dfs_list,
@@ -26,12 +31,7 @@ clean <- function(food_dfs_list) {
 }
 
 
-main <- function() {
-  args <- commandArgs(trailingOnly = T)
-  # input files are all command line arugments besides the last
-  input_files <- head(args, -1)
-  # output file is the last command line argument
-  output_file <- tail(args, 1)
+main <- function(input_files, output_file) {
 
   map(input_files,
       ~ read_csv(.x, col_types = cols(.default = col_character()))) %>%
@@ -40,4 +40,4 @@ main <- function() {
 }
 
 
-main()
+main(opts$inputs, opts$output)

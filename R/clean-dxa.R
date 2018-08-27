@@ -1,4 +1,18 @@
+"Clean DXA data
+
+Usage:
+  clean-dxa.R <input> (-o <out> | --output <out>)
+  clean-dxa.R -h | --help
+
+Arguments:
+  -h --help                Show this screen
+  input                    .csv of raw DXA data
+  -o <out> --output <out>  .rds of cleaned data
+" -> doc
+
 pacman::p_load(tidyverse)
+opts <- docopt::docopt(doc)
+
 
 clean <- function(df) {
   df %>%
@@ -11,16 +25,13 @@ clean <- function(df) {
            week = (week - 1) * 12)
 }
 
-main <- function() {
-  args <- commandArgs(trailingOnly = T)
-  input_file <- args[1]
-  output_file <- args[2]
 
-  read_csv(input_file,
+main <- function(input_file, output_file) {
+read_csv(input_file,
            col_types = cols(.default = col_character())) %>%
     clean() %>%
     write_rds(output_file)
 }
 
 
-main()
+main(opts$input, opts$output)

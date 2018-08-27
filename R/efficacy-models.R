@@ -1,11 +1,20 @@
-pacman::p_load(tidyverse, lme4)
+"Fit linear mixed effects models and estimate contrasts for each outcome
 
-main <- function() {
-  args <- commandArgs(trailingOnly = T)
-  # input file is the first command line argument
-  input_file <- args[1]
-  # output file is the last command line argument
-  output_file <- tail(args, 1)
+Usage:
+  efficacy-models.R <input> (-o <out> | --output <out>)
+  efficacy-models.R -h | --help
+
+Arguments:
+  -h --help                Show this screen
+  input                    .rds of cleaned and joined data
+  -o <out> --output <out>  .rds of results of the contrasts
+" -> doc
+
+pacman::p_load(tidyverse, lme4)
+opts <- docopt::docopt(doc)
+
+
+main <- function(input_file, output_file) {
 
   animo <- read_rds(input_file) %>%
     # subset to weeks of interest, filter those who weren't randomized
@@ -54,7 +63,6 @@ main <- function() {
       ) %>% list())
   })
 
-
   linfct_means <- rbind(
     '0_WLC' = c(1, 0, 0, 0, 0, 0),
     '12_WLC' = c(1, 0, 1, 0, 0, 0),
@@ -79,11 +87,9 @@ main <- function() {
     # '24_GCSWLI - WLC' = c(0, 1, 0, 0, 0, 1)
   )
 
-
   linfcts <- list(means = linfct_means,
                   diffs_base = linfct_diffs_base,
                   diffs_grps = linfct_diffs_grps)
-
 
   #' Run constrasts
   glhts_dfs <- map(model_dfs, function(model_df) {
@@ -92,7 +98,6 @@ main <- function() {
       reduce(bind_rows) %>%
       mutate(glht = multcomp::glht(lmer_mod, linfct) %>% list())
   })
-
 
   #' Get estimates and confidence intervals
   ests_dfs <- map(glhts_dfs, function(glhts_df) {
@@ -105,7 +110,6 @@ main <- function() {
         ) %>% list()
       )
   })
-
 
   results_dfs <- map(ests_dfs, function(ests_df) {
     ests_df %>%
@@ -123,9 +127,8 @@ main <- function() {
       )
   })
 
-
   write_rds(results_dfs, path = output_file)
 }
 
 
-main()
+main(opts$input, opts$output)

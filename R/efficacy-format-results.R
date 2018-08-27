@@ -1,11 +1,20 @@
-pacman::p_load(tidyverse)
+"Format results of contrasts for each outcome for display on table
 
-main <- function() {
-  args <- commandArgs(trailingOnly = T)
-  # input file is the first command line argument
-  input_file <- args[1]
-  # output file is the last command line argument
-  output_file <- tail(args, 1)
+Usage:
+  efficacy-format-results.R <input> (-o <out> | --output <out>)
+  efficacy-format-results.R -h | --help
+
+Arguments:
+  -h --help                Show this screen
+  input                    .rds of results of contrasts
+  -o <out> --output <out>  .rds of formatted results
+" -> doc
+
+pacman::p_load(tidyverse)
+opts <- docopt::docopt(doc)
+
+
+main <- function(input_file, output_file) {
 
   results_dfs <- read_rds(input_file)
 
@@ -28,7 +37,6 @@ main <- function() {
           list()
       ) %>% select(output) %>% flatten_df()
   })
-
 
   results_trans_dfs <- results_combined_dfs %>% map(function(results_df) {
     # back transform log transformed variables
@@ -83,7 +91,6 @@ main <- function() {
       ungroup()
   })
 
-
   #' format the median number of observations at each time point to add to table
   present_tabs <- map(output_dfs, function(output_df) {
     output_df %>%
@@ -98,7 +105,6 @@ main <- function() {
       set_names(c("label", "group", "mean_base", "mean_w12", "mean_w24")) %>%
       ungroup()
   })
-
 
   #' Combine and format data for each table
   tabs <- map2(output_dfs, present_tabs, function(output_df, present_tab) {
@@ -130,7 +136,7 @@ main <- function() {
   })
 
   write_rds(list(tabs = tabs, output_dfs = output_dfs),  path = output_file)
-
 }
 
-main()
+
+main(opts$input, opts$output)

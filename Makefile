@@ -12,7 +12,7 @@ sap : $(SAP_DOC)
 
 $(SAP_DOC) : $(RENDER_SRC) $(SAP_SRC)
 	@mkdir -p $(METHODS_DIR)
-	Rscript $^ $@
+	Rscript $^ $(@D) $(@F)
 
 
 ## randomize   : Generate randomization list.
@@ -31,6 +31,7 @@ pull : $(RAW_CSVS) $(RAW_DIR)/screen.csv
 $(RAW_DIR)/%.csv : $(TOKEN_DIR)/%.token $(PULL_SRC)
 	@mkdir -p $(RAW_DIR)
 	$(PULL_EXE) $< > $@
+	chmod 600 $@
 
 $(RAW_DIR)/%.csv : $(CONVERT_SRC) $(RAW_DIR)/%.xlsx
 	Rscript $^ $@
@@ -43,10 +44,10 @@ process : $(FULL_DATA)
 $(CLEAN_DIR)/%.rds : $(SRC_DIR)/clean-%.R $(RAW_DIR)/%*.csv \
                      $(SRC_DIR)/clean-%*.R
 	@mkdir -p $(CLEAN_DIR)
-	Rscript $^ $@
+	Rscript $^ -o $@
 
 $(FULL_DATA) : $(JOIN_SRC) $(CLEAN_RDSS)
-	Rscript $^ $@
+	Rscript $^ -o $@
 
 
 ## feas        : Generate feasibility results.
@@ -55,7 +56,7 @@ feas : $(FEAS_DOC)
 
 $(FEAS_DOC) : $(RENDER_SRC) $(FEAS_SRC) $(FULL_DATA) $(SCREEN_CSV)
 	@mkdir -p $(RESULTS_DIR)
-	Rscript  $^ $@
+	Rscript $(wordlist 1,2,$^) $(@D) $(@F) $(filter-out $(wordlist 1,2,$^),$^)
 
 
 ## descr       : Generate participant characteristics table.
@@ -64,7 +65,7 @@ descr : $(DESCR_DOC)
 
 $(DESCR_DOC) : $(RENDER_SRC) $(DESCR_SRC) $(FULL_DATA)
 	@mkdir -p $(RESULTS_DIR)
-	Rscript $^ $@
+	Rscript $(wordlist 1,2,$^) $(@D) $(@F) $(filter-out $(wordlist 1,2,$^),$^)
 
 
 ## eff         : Generate efficacy outcome tables.
@@ -73,13 +74,13 @@ eff : $(EFF_DOC)
 
 $(EFF_RAW_RDS) : $(EFF_MODEL_SRC) $(FULL_DATA)
 	@mkdir -p $(RESULTS_DIR)
-	Rscript $^ $@
+	Rscript $^ -o $@
 
 $(EFF_RDS) : $(EFF_FORMAT_SRC) $(EFF_RAW_RDS)
-	Rscript $^ $@
+	Rscript $^ -o $@
 
 $(EFF_DOC) : $(RENDER_SRC) $(EFF_SRC) $(EFF_RDS)
-	Rscript $^ $@
+	Rscript $(wordlist 1,2,$^) $(@D) $(@F) $(filter-out $(wordlist 1,2,$^),$^)
 
 
 ## wilcox      : Run Wilcoxon tests on LTPA data.
@@ -88,7 +89,7 @@ wilcox : $(WILCOX_LTPA)
 
 $(WILCOX_LTPA) : $(WILCOX_SRC) $(FULL_DATA)
 	@mkdir -p $(RESULTS_DIR)
-	Rscript $^ $@
+	Rscript $^ -o $@
 
 
 ## remove      : Remove auto-generated files.
