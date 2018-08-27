@@ -1,4 +1,18 @@
+"Clean blood biomarker data
+
+Usage:
+  clean-blood.R <input> (-o <out> | --output <out>)
+  clean-blood.R -h | --help
+
+Arguments:
+  -h --help                Show this screen
+  input                    .csv of raw blood biomarker data
+  -o <out> --output <out>  .rds of cleaned data
+" -> doc
+
 pacman::p_load(tidyverse)
+opts <- docopt::docopt(doc)
+
 
 clean <- function(df) {
   blood_base_labels <-
@@ -51,15 +65,13 @@ clean <- function(df) {
     spread(key = var, value = value, convert = T)
 }
 
-main <- function() {
-  args <- commandArgs(trailingOnly = T)
-  input_file <- args[1]
-  output_file <- args[2]
 
+main <- function(input_file, output_file) {
   read_csv(input_file,
            col_types = cols(.default = col_character())) %>%
     clean() %>%
     write_rds(output_file)
 }
 
-main()
+
+main(opts$input, opts$output)

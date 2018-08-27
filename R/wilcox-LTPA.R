@@ -1,9 +1,19 @@
-pacman::p_load(tidyverse)
+"Run Wilcoxon rank sum and signed rank tests for activity time outcome
 
-main <- function() {
-  args <- commandArgs(trailingOnly = TRUE)
-  input_file <- args[1]
-  output_file <- args[2]
+Usage:
+  wilcox-LTPA.R <input> (-o <out> | --output <out>)
+  wilcox-LTPA.R -h | --help
+
+Arguments:
+  -h --help                Show this screen
+  input                    .rds of full cleaned data
+  -o <out> --output <out>  .Rdata file to save resulting models in
+" -> doc
+
+pacman::p_load(tidyverse)
+opts <- docopt::docopt(doc)
+
+main <- function(input_file, output_file) {
 
   animo <- read_rds(input_file)
 
@@ -44,4 +54,4 @@ main <- function() {
 }
 
 
-main()
+main(opts$input, opts$output)
