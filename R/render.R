@@ -1,20 +1,22 @@
 "Render a .Rmd document
 
 Usage:
-  render.R INPUT_RMD OUTPUT_DIR OUTPUT [<input-data>...]
+  render.R <rmd> <output_dir> <output> [<input_data>...]
+  render.R -h | --help
 
 Arguments:
-  INPUT_RMD   Filename of the .Rmd file to render
-  OUTPUT_DIR  Directory to save output file
-  OUTPUT      Filename of the desired output file
-  input-data  Data files required to knit document, passed to Rmarkdown as parameters
+  -h --help   Show this screen
+  rmd         Filename of the .Rmd file to render
+  output_dir  Directory to save output file
+  output      Filename of the desired output file
+  input_data  Data files required to knit document (passed to Rmarkdown as parameters)
 
 Only inplemented to knit word or .html documents.
 " -> doc
 
 pacman::p_load(rmarkdown, docopt)
 opts <- docopt::docopt(doc)
-print(opts)
+
 main <- function(input_file, output_dir, output_file, input_data) {
 
   if (length(input_data) > 0) {
@@ -33,4 +35,4 @@ main <- function(input_file, output_dir, output_file, input_data) {
                     output_dir = output_dir)
 }
 
-main(opts$INPUT, opts$OUTPUT_DIR, opts$OUTPUT, opts[["input-data"]])
+main(opts$rmd, opts$output_dir, opts$output, opts$input_data)
