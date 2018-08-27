@@ -1,19 +1,20 @@
 "Clean data from the main REDCap project
 
 Usage:
-  clean-animo.R <input> <output> [<dependencies>...]
+  clean-animo.R <input> <dependencies>... (-o <out> | --output <out>)
+  clean-animo.R -h | --help
 
 Arguments:
-  input         Path to .csv of file of raw data from REDCap
-  output        Path to write .rds file of cleaned data to
-  dependencies  Files with required function definitions
+  -h --help                Show this screen
+  input                    .csv of raw data from REDCap
+  -o <out> --output <out>  .rds of cleaned data
+  dependencies             Files with required function definitions
 " -> doc
 
 pacman::p_load(tidyverse)
 opts <- docopt::docopt(doc)
 
 
-#' Clean ANIMO data
 clean_animo <- function(animo) {
   animo %>%
     mutate_at(vars(starts_with("waist"), starts_with("weight"), bmi_paf),
