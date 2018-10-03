@@ -39,7 +39,8 @@ The magic of the `pacman` R package will then install any other required package
 
 ### Obtaining the data
 
-Unfortunately, our data are not publicly available. If are a study collaborator with access to the REDCap project, you can use the next section to obtain the data stored in REDCap.
+Unfortunately, our data are not publicly available. If you are a study collaborator with access to the REDCap project, you can use the next section to obtain the data stored in REDCap.
+
 
 #### From REDCap (requires API tokens for each project)
 
