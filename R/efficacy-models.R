@@ -10,7 +10,7 @@ Arguments:
   -o <out> --output <out>  .rds of results of the contrasts
 " -> doc
 
-pacman::p_load(tidyverse, lme4)
+pacman::p_load(tidyverse, lme4, multcomp)
 opts <- docopt::docopt(doc)
 
 
@@ -19,7 +19,7 @@ main <- function(input_file, output_file) {
   animo <- read_rds(input_file) %>%
     # subset to weeks of interest, filter those who weren't randomized
     filter(week %in% c(0, 12, 24), !is.na(group)) %>%
-    # change week and group to factors, label groups
+    # change week to factor
     mutate(week = factor(week))
 
   macro_labels <- tribble(
